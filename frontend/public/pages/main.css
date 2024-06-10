@@ -1,0 +1,62 @@
+.container_1{
+    background-color: whitesmoke;
+    border-radius: 10px;
+    padding: 1vw;
+ 
+    align-items: center;
+    text-align: center;
+    margin: auto;
+    box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
+}
+
+.container_1 input, label{
+    display: block;
+    user-select: none;
+
+    width: 10vw;
+    height: 2vh;
+}
+
+.container_1 label{
+    margin-top: 5vh;
+}
+
+.container_header{
+    background: linear-gradient(to bottom right, rgb(0, 200, 255), rgb(0, 140, 255));
+    color: white;
+    
+    border: thin solid black;
+
+
+    line-height: 5vh;
+    height: 5vh;
+    
+    font-size: 1vw;
+    text-align: left;
+    padding-left: 0.5vw;
+}
+
+.container_1 form{
+    height: 100%;
+    margin: 5vw;
+    font-size: 0.8vw;
+}
+
+.submit{
+    margin-top: 8vh;
+}
+
+.page{
+    height: 100vh;
+    /*background: linear-gradient(to bottom right, rgb(78, 224, 246), rgb(62, 123, 255));
+    */
+
+    align-items: center;
+    display: flex;
+}
+
+.logo{
+    width: 3vh;
+    float: right;
+    padding: 0.2vw;
+}

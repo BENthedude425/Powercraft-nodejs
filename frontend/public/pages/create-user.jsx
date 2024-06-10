@@ -1,0 +1,28 @@
+import {React} from "react";
+import "./main.css";
+
+function Pcreate_user() {
+    return(
+        <div className="page">
+            <div className="container_1">
+                <div className="container_header">
+                    <div style={{display:"inline"}}><span><b>P</b>owercraft</span></div>
+                    
+                    <img src="../pictures/apple.png" className="logo"/>
+                </div>
+                
+                <form>
+                    <label>Username</label>
+                    <input type="text" name="username" placeholder="username"/>
+
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="password"/>
+
+                    <input type="submit" value="Create Account" className="submit"/>
+                </form>
+            </div>
+        </div>
+    )
+}
+
+export default Pcreate_user;
