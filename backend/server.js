@@ -1,34 +1,40 @@
 const express = require('express')
-const mysql = require('mysql')
+const mysql2 = require('mysql2')
 const app = express()
 const setupFile = require('./setup')
 const modules = require('./modules')
 
 const PORT = 8080
 var DATABASECONNECTION
-var dataBaseConfigs
+var DATABASECONFIGS
 
 var FILEPATHS;
 const FILEPREFIX = modules.GetFilePrefix()
-const FILEIDENT = 'server'
+const FILEIDENT = 'server.js'
 
 modules.Cout(FILEIDENT, '--------------------INIT--------------------')
 
 async function InitialiseDB () {
-  if (await setupFile.Setup()) setupFile.Setup()
-  LoadConfigs()
+  await setupFile.Setup()
+  await LoadConfigs()
   Listen()
-  return mysql.createConnection( dataBaseConfigs)
+
+  return mysql2.createConnection(DATABASECONFIGS)
 }
 
-function LoadConfigs() {
-  // Get the db configs from the save file
-  dataBaseConfigs = modules.GetParsedFile(FILEPATHS['Database_configs'])
-  FILEPATHS = modules.GetFilePaths()
+async function LoadConfigs() {
+  // Get the db configs from the save file#
+  FILEPATHS = await modules.GetFilePaths()
+  DATABASECONFIGS = await modules.GetParsedFile(FILEPATHS['Database_configs'])
+
+}
+
+async function INIT(){
+  DATABASECONNECTION = await InitialiseDB()
 }
 
 // Initialise systems
-DATABASECONNECTION =  InitialiseDB()
+INIT()
 
 // ---------- APP HANDLERS ---------- \\
 
@@ -38,12 +44,19 @@ app.post('/api/configs', (req, res) => {
 })
 
 app.get('/', (rep, res) => {
-  res.send(dataBaseConfigs)
+  res.send(DATABASECONFIGS)
+})
+
+app.get('/db', (rep, res) => {
+  DATABASECONNECTION.query("SELECT * FROM users", (err, results, fields) =>{
+    res.send(results)
+
+  })
 })
 
 function Listen(){
   app.listen(PORT, () => {
-    console.log(`server started on port ${PORT}`)
+    console.log(modules.Cout(FILEIDENT, `server started on port ${PORT}`))
   })
   
 }
