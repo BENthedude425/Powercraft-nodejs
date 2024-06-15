@@ -19,8 +19,7 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.10.0",
     "nexe": "^4.0.0-rc.6",
-    "node-fetch": "^2.6.7",
-    "signtool": "^1.0.0"
+    "node-fetch": "^2.6.7"
   },
   "nodemonConfig": {
     "ext": "js",
