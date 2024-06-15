@@ -11,9 +11,14 @@ function GetFilePath(){
     return "Files.json"
 }
 
-function GetFilePaths(){
-    return fs.readFileSync(GetFilePath(),)
-}
+function GetFilePaths () {
+    if (!fs.existsSync(GetFilePath())) {
+      fs.writeFileSync(modules.GetFilePath(), JSON.stringify(DEFAULTFILEPATHS))
+    }
+  
+    const filePaths = GetParsedFile(GetFilePath())
+    return filePaths
+  }
 
 function GetFilePrefix(){
     return FILEPREFIX;
@@ -32,5 +37,6 @@ module.exports = {
     Cout,
     GetParsedFile,
     GetFilePath,
+    GetFilePaths,
     GetFilePrefix,
 }

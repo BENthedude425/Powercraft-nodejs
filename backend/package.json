@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "test.js",
   "scripts": {
+    "build": "esbuild server.js --bundle --platform=node --outfile=server-out.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js --build",
     "dev": "nodemon server.js"
@@ -12,12 +13,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "esbuild": "^0.21.5",
     "express": "^4.19.2",
     "inquirer": "^8.2.4",
     "mysql": "^2.18.1",
     "mysql2": "^3.10.0",
     "nexe": "^4.0.0-rc.6",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "signtool": "^1.0.0"
   },
   "nodemonConfig": {
     "ext": "js",
