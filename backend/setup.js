@@ -40,6 +40,11 @@ async function Setup () {
   DATABASECONFIGS = await GetDataBaseConfigs()
   DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS)
 
+  if(!CreateDataBase(DATABASECONFIGS.databaseName)){
+    console.warn("Database could not be created. Exiting setup")
+    return;
+  }
+
   const TableKeys = Object.keys(TABLES)
   for (let i = 0; i < TableKeys.length; i++) {
     selectedKey = TableKeys[i]
@@ -126,9 +131,33 @@ function SearchTable (tableName, callback) {
   )
 }
 
-function CreateDataBase (databaseName) {}
+function CreateDataBase (databaseName) { 
+  if(SearchDataBase(databaseName)){
+    return true;
+  }
 
-function SearchDataBase (databaseName) {}
+
+  err = DATABASECONNECTION.query(
+    String(
+      "CREATE DATABASE " + databaseName
+    )
+  )
+
+  if(err){
+    return false;
+  }
+
+  modules.Cout(FILEIDENT, `Created ${databaseName} database`)
+  return true;
+}
+
+function SearchDataBase (databaseName) {
+  return DATABASECONNECTION.query(
+    String(
+      "SHOW DATABASES LIKE " + databaseName
+    )
+  )
+}
 
 module.exports = {
   Setup
