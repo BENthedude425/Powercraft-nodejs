@@ -17,9 +17,9 @@ modules.Cout(FILEIDENT, '--------------------INIT--------------------')
 async function InitialiseDB () {
   await setupFile.Setup()
   await LoadConfigs()
-  Listen()
 
-  return mysql2.createConnection(DATABASECONFIGS)
+
+  //return mysql2.createConnection(DATABASECONFIGS)
 }
 
 async function LoadConfigs() {
@@ -37,10 +37,12 @@ async function INIT(){
 INIT()
 
 // ---------- APP HANDLERS ---------- \\
+app.use(express.json());       
+app.use(express.urlencoded({extended: true})); 
 
-app.post('/api/configs', (req, res) => {
-  // check auth
-  // update the corresponding config file
+app.post('/api/create-user', (req, res) => {
+  console.log(req.body.username, req.body.password)
+  res.redirect("http://localhost/login")
 })
 
 app.get('/', (rep, res) => {
@@ -54,9 +56,6 @@ app.get('/db', (rep, res) => {
   })
 })
 
-function Listen(){
-  app.listen(PORT, () => {
-    console.log(modules.Cout(FILEIDENT, `server started on port ${PORT}`))
-  })
-  
-}
+app.listen(PORT, () => {
+  modules.Cout(FILEIDENT, `server started on port ${PORT}`)
+})
