@@ -11,7 +11,7 @@ function Pcreate_user() {
                     <img src="../pictures/apple.png" className="logo"/>
                 </div>
                 
-                <form>
+                <form method="POST" action="http://localhost:8080/api/create-user">
                     <label>Username</label>
                     <input type="text" name="username" placeholder="username"/>
 

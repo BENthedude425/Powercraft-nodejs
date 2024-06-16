@@ -38,20 +38,25 @@ async function Setup () {
   FILEPATHS_FILE = await modules.GetFilePath()
   FILEPATHS = await modules.GetFilePaths()
   DATABASECONFIGS = await GetDataBaseConfigs()
-  DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS)
+  
+  
+  err = await CreateDataBase(DATABASECONFIGS.database, async (err, results, fields) =>{
 
-  if(!CreateDataBase(DATABASECONFIGS.databaseName)){
-    console.warn("Database could not be created. Exiting setup")
-    return;
-  }
-
-  const TableKeys = Object.keys(TABLES)
-  for (let i = 0; i < TableKeys.length; i++) {
-    selectedKey = TableKeys[i]
-    await CreateTable(selectedKey, TABLES[selectedKey])
-  }
-
-
+    if (err && results.length == 0){
+      console.warn("Database could not be created. Exiting setup\n", err)
+      return;
+    }
+    modules.Cout(FILEIDENT, "Checking all tables are existing")
+    // Connect to the sql server under the database
+    DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS)
+    const TableKeys = Object.keys(TABLES)
+    for (let i = 0; i < TableKeys.length; i++) {
+      selectedKey = TableKeys[i]
+      await CreateTable(selectedKey, TABLES[selectedKey])
+    }
+  
+    modules.Cout(FILEIDENT, "setup finished")
+  })
 }
 
 function GetDataBaseConfigsFromUser(){
@@ -98,9 +103,9 @@ async function GetDataBaseConfigs () {
   return dbConfigs
 }
 
-function CreateTable (tableName, values) {
-  SearchTable(tableName, function(err,results, fields){
-    if (err) console.warn(err)
+async function CreateTable (tableName, values) {
+  await SearchTable(tableName, function(err,results, fields){
+    if (err) modules.Cout(FILEIDENT, err)
     
     tableExists = results.length > 0;
     
@@ -111,7 +116,7 @@ function CreateTable (tableName, values) {
     }
   
     DATABASECONNECTION.query(String('CREATE TABLE ' + tableName + ' ' + values), (err) =>{
-      if(err) console.warn(err)
+      if(err) modules.Cout(FILEIDENT, err)
     })
 
     modules.Cout(FILEIDENT, `Table ${tableName} has been successfully created!`)
@@ -131,32 +136,23 @@ function SearchTable (tableName, callback) {
   )
 }
 
-function CreateDataBase (databaseName) { 
-  if(SearchDataBase(databaseName)){
-    return true;
-  }
+function CreateDataBase (databaseName, callback) {
 
+  TempDBConfigs = Object.assign({}, DATABASECONFIGS)
+  delete TempDBConfigs["database"]
 
-  err = DATABASECONNECTION.query(
-    String(
-      "CREATE DATABASE " + databaseName
+  TempDBCONN = mysql2.createConnection(TempDBConfigs)
+
+    TempDBCONN.query(
+      String(
+        "CREATE DATABASE IF NOT EXISTS " + databaseName
+      ), 
+      callback
     )
-  )
-
-  if(err){
-    return false;
-  }
-
-  modules.Cout(FILEIDENT, `Created ${databaseName} database`)
-  return true;
-}
-
-function SearchDataBase (databaseName) {
-  return DATABASECONNECTION.query(
-    String(
-      "SHOW DATABASES LIKE " + databaseName
-    )
-  )
+    
+    TempDBCONN.end()
+    modules.Cout(FILEIDENT, `The ${databaseName} database has been loaded successfully`)
+  
 }
 
 module.exports = {

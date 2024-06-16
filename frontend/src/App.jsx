@@ -1,13 +1,15 @@
 import React from "react";
 import {BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
-import Pcreate_user from "../public/pages/create-user";
+import Pcreate_user from "../pages/create-user";
+import Plogin from "../pages/login";
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+          <Route path="login" element={<Plogin />} />
           <Route path="create-user" element={<Pcreate_user />}/>
       </Routes>
     </BrowserRouter>
