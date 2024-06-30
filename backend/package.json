@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "cookie-parser": "^1.4.6",
     "esbuild": "^0.21.5",
     "express": "^4.19.2",
     "inquirer": "^8.2.4",
