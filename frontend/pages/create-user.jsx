@@ -12,6 +12,7 @@ function Pcreate_user() {
                 </div>
                 
                 <form method="POST" action="http://localhost:8080/api/create-user">
+                    <label>Create an account for powercraft</label>
                     <label>Username</label>
                     <input type="text" name="username" placeholder="username"/>
 
@@ -19,6 +20,8 @@ function Pcreate_user() {
                     <input type="password" name="password" placeholder="password"/>
 
                     <input type="submit" value="Create Account" className="submit"/>
+
+                    <div class="bottom"><a href="login">Login</a></div>
                 </form>
             </div>
         </div>

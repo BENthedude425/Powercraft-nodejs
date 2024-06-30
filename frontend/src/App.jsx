@@ -1,6 +1,8 @@
 import React from "react";
 import {BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
+
+// IMPORT PAGES \\
 import Pcreate_user from "../pages/create-user";
 import Plogin from "../pages/login";
 

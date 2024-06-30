@@ -1,58 +1,162 @@
 const express = require('express')
 const mysql2 = require('mysql2')
 const app = express()
-const setupFile = require('./setup')
+const cookieParser = require('cookie-parser');
 const modules = require('./modules')
+const crypto = require('crypto')
+const {
+  Setup,
+  GetRootUserCredentialsFromUser,
+  CreateRootUser
+} = require('./setup')
+const { sourceMapsEnabled } = require('process')
 
 const PORT = 8080
 var DATABASECONNECTION
 var DATABASECONFIGS
 
-var FILEPATHS;
+var FILEPATHS
 const FILEPREFIX = modules.GetFilePrefix()
 const FILEIDENT = 'server.js'
+const FIXEDIPADDRESS = "localhost"
 
-modules.Cout(FILEIDENT, '--------------------INIT--------------------')
 
 async function InitialiseDB () {
-  await setupFile.Setup()
   await LoadConfigs()
 
-
-  //return mysql2.createConnection(DATABASECONFIGS)
+  return mysql2.createConnection(DATABASECONFIGS)
 }
 
-async function LoadConfigs() {
+async function CheckUserExists (username, password, callback) {
+  success = false
+  hashedPass = crypto.createHash('sha256').update(password).digest('hex')
+  DATABASECONNECTION.query(
+    `SELECT * FROM users WHERE username='${username}' AND password='${hashedPass}'`,
+    callback
+  )
+}
+
+function LoginUser (username, newToken, callback) {
+
+  DATABASECONNECTION.query(
+    `UPDATE users SET auth_token='${newToken}' WHERE username='${username}'`,
+    callback
+  )
+
+  return newToken
+}
+
+async function GenerateAuthToken () {
+  found = false
+  while (!found) {
+    const CHARS =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const CHARSLEN = CHARS.length
+    authToken = ''
+
+    for (i = 0; i < 100; i++) {
+      authToken += CHARS.charAt(Math.floor(Math.random() * CHARSLEN))
+    }
+
+    await new Promise((resolve, reject) => {
+      DATABASECONNECTION.query(
+        `SELECT * FROM users WHERE auth_token='${authToken}'`,
+        (error, results, fields) => {
+          if (error) {
+            modules.Cout(FILEIDENT, error)
+          }
+
+          // If there are no results then the token is unique
+          found = results.length == 0
+
+          resolve()
+        }
+      )
+    })
+  }
+
+  modules.Cout(FILEIDENT, `Generated new auth token: ${authToken}`)
+  return authToken
+}
+
+async function LoadConfigs () {
   // Get the db configs from the save file#
   FILEPATHS = await modules.GetFilePaths()
   DATABASECONFIGS = await modules.GetParsedFile(FILEPATHS['Database_configs'])
-
 }
 
-async function INIT(){
+async function INIT () {
+  modules.Cout(FILEIDENT, 'INIT', true)
   DATABASECONNECTION = await InitialiseDB()
+  await Setup()
+  modules.Cout(FILEIDENT, 'FINISHED INIT', true)
 }
 
 // Initialise systems
 INIT()
 
 // ---------- APP HANDLERS ---------- \\
-app.use(express.json());       
-app.use(express.urlencoded({extended: true})); 
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(cookieParser())
+
 
 app.post('/api/create-user', (req, res) => {
+  values = {
+    username: '',
+    password: '',
+    permission_level: 4
+  }
   console.log(req.body.username, req.body.password)
-  res.redirect("http://localhost/login")
+
+  res.redirect(`http://${FIXEDIPADDRESS}/login`)
 })
 
-app.get('/', (rep, res) => {
-  res.send(DATABASECONFIGS)
+app.post('/api/login', async (req, res) => {
+  CheckUserExists(
+    req.body.username,
+    req.body.password,
+    (error, results, fields) => {
+      if (error) {
+        modules.Cout(FILEIDENT, error)
+      }
+
+      newToken = GenerateAuthToken()
+
+      LoginUser(req.body.username, newToken, (error, results, fields) => {
+        if (error) {
+          {
+            modules.Cout(FILEIDENT, error)
+          }
+        }
+
+        res.cookie("auth_token", newToken)
+        res.redirect(`http://${FIXEDIPADDRESS}/index.html`)
+      })
+    }
+  )
+})
+
+app.get('/', (req, res) => {
+  res.send([DATABASECONFIGS, req.cookies])
+
 })
 
 app.get('/db', (rep, res) => {
-  DATABASECONNECTION.query("SELECT * FROM users", (err, results, fields) =>{
+  DATABASECONNECTION.query('SELECT * FROM users', (err, results, fields) => {
     res.send(results)
+  })
+})
 
+app.get('/createnewrootuser', async (req, res) => {
+  modules.Cout(FILEIDENT, 'DELETE THIS FUNCTION')
+  CreateRootUser(DATABASECONNECTION, (error, results, fields) => {
+    if (error) {
+      res.send('Failed to create user')
+      return
+    }
+
+    res.send('Created user')
   })
 })
 
