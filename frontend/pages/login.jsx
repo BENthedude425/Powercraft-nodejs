@@ -1,5 +1,6 @@
 import {React} from "react";
 import "./main.css";
+import CheckAuth from "../src/CheckAuth";
 
 export default function Plogin(){
     return(
@@ -23,6 +24,10 @@ export default function Plogin(){
 
                     <div class="bottom"><a href="create-user">Create an account</a></div>
                 </form>
+
+                <button onClick={CheckAuth}>
+                    authenticate
+                </button>
             </div>
         </div>
     )
