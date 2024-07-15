@@ -1,0 +1,44 @@
+.sidebar{
+    background-color: rgb(240, 237, 237);
+    width: 10vw;
+}
+
+.sidebar-container{
+    display: inline;
+}
+
+.sidebar span{
+    display: block;
+    font-size: 0.5vw;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+    padding-left: 0.5vw;
+    border-top: solid 1px rgba(214, 210, 210, 0.782);
+}
+
+.sidebar-dropdown{
+    overflow-y:hidden;
+
+    border-top: 3px solid rgba(214, 210, 210, 0.782);;
+    border-bottom: 3px solid rgba(214, 210, 210, 0.782);;
+}
+
+.sidebar-content{
+    height: 0;
+    transition: all ease 0.5s;
+}
+
+.sidebar-content:hover{
+    height:10vh;
+    overflow-y: auto;
+}
+
+.sidebar-content::-webkit-scrollbar {
+    display: none;
+}
+
+@media only screen and (max-width: 400px) {
+    .sidebar span{
+        font-size: 1vw;
+    }    
+}
