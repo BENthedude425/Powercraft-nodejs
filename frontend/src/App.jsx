@@ -1,31 +1,28 @@
-import {React} from "react";
-import { BrowserRouter, Route, Routes, Outlet } from "react-router-dom";
-import "./App.css";
+import { React } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import "./assets/app.css";
 
 // IMPORT PROTECTED ROUTE COMPONENT \\
-import {ProtectedRoute} from "./ProtectedRoute";
+import { ProtectedRoute } from "./ProtectedRoute";
 
 // IMPORT PAGES \\
+import PIndex from "../pages/index";
 import Pcreate_user from "../pages/create-user";
 import Plogin from "../pages/login";
-import PTest from "../pages/test";
+import PDashboard from "../pages/dashboard";
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="login"       element={<Plogin />}      />
+        <Route path="/" element={<PIndex />} />
+        <Route path="login" element={<Plogin />} />
         <Route path="create-user" element={<Pcreate_user />} />
-        
-        
+
         <Route element={<ProtectedRoute />}>
-          <Route path="test"        element={<PTest />} />
-          <Route path="woohoo" element={<b>woohoo</b>} />
-        </Route>  
-      
+          <Route path="dashboard" element={<PDashboard />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;

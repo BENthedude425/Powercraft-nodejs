@@ -1,5 +1,5 @@
 import {React} from "react";
-import "./main.css";
+import "../src/assets/main.css";
 
 function Pcreate_user() {
     return(

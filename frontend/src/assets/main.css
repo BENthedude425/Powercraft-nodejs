@@ -50,12 +50,11 @@
     height: 100vh;
     /*background: linear-gradient(to bottom right, rgb(78, 224, 246), rgb(62, 123, 255));
     */
-
+    display: inline;
     align-items: center;
-    display: flex;
 }
 
-.logo{
+.container-logo{
     width: 3vh;
     float: right;
     padding: 0.2vw;
