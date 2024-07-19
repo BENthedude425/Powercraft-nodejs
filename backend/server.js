@@ -18,7 +18,9 @@ var DATABASECONFIGS
 var FILEPATHS
 const FILEPREFIX = modules.GetFilePrefix()
 const FILEIDENT = 'server.js'
-const FIXEDIPADDRESS = 'http://newhost425.ddns.net:81'
+
+//const FIXEDIPADDRESS = 'http://newhost425.ddns.net:81'
+const FIXEDIPADDRESS = 'http://localhost'
 
 async function InitialiseDB () {
   await LoadConfigs()

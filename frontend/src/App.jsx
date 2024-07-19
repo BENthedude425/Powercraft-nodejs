@@ -12,17 +12,17 @@ import Plogin from "../pages/login";
 import PDashboard from "../pages/dashboard";
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<PIndex />} />
-        <Route path="login" element={<Plogin />} />
-        <Route path="create-user" element={<Pcreate_user />} />
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<PIndex />} />
+                <Route path="login" element={<Plogin />} />
+                <Route path="create-user" element={<Pcreate_user />} />
 
-        <Route element={<ProtectedRoute />}>
-          <Route path="dashboard" element={<PDashboard />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
+                <Route element={<ProtectedRoute />}>
+                    <Route path="dashboard" element={<PDashboard />} />
+                </Route>
+            </Routes>
+        </BrowserRouter>
+    );
 }
