@@ -1,29 +1,52 @@
-import {React} from "react";
+import { React } from "react";
 import "../src/assets/main.css";
+import GetAPIAddr from "../src/assets/getAPIAddr";
 
-export default function Plogin(){
-    return(
-        <div className="page" style={{display:"flex"}}>
+export default function Plogin() {
+    const APIADDR = GetAPIAddr();
+
+    return (
+        <div className="page" style={{ display: "flex" }}>
             <div className="container_1">
                 <div className="container_header">
-                    <div style={{display:"inline"}}><span><b>P</b>owercraft</span></div>
-                    
-                    <img src="../pictures/apple.png" className="container-logo"/>
+                    <div style={{ display: "inline" }}>
+                        <span>Login to powercraft</span>
+                    </div>
+
+                    <img
+                        src="../pictures/apple.png"
+                        className="container-logo"
+                    />
                 </div>
-                
-                <form method="POST" action="http://192.168.0.62:8080/api/login">
-                    <label>Login to powercraft</label>
-                    <label>Username</label>
-                    <input type="text" name="username" placeholder="username"/>
 
-                    <label>Password</label>
-                    <input type="password" name="password" placeholder="password"/>
+                <form method="POST" action={`${APIADDR}/api/login`}>
+                    <input
+                        type="text"
+                        name="username"
+                        className="text_input"
+                        placeholder="username"
+                    />
 
-                    <input type="submit" value="Login" className="submit"/>
+                    <input
+                        type="password"
+                        name="password"
+                        className="text_input"
+                        placeholder="password"
+                    />
 
-                    <div class="bottom"><a href="create-user">Create an account</a></div>
+                    <input type="submit" value="Login" className="login-submit" />
+
+                    <div>
+                        <button
+                            className="bottom"
+                            type="button"
+                            onClick={() =>{window.location="/create-user"}}
+                        >
+                            Create an account
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
-    )
+    );
 }
