@@ -125,7 +125,6 @@ app.post("/api/create-user", async (req, res) => {
     credentials["password"] = req.body.password;
     credentials["password2"] = req.body.password2;
 
-
     if (credentials["password"] != credentials["password2"]) {
         res.json([false, "passwords do not match"]);
         return;
@@ -194,8 +193,12 @@ app.post("/api/create-user", async (req, res) => {
         res.json([false, "failed to send application"]);
     });
 
-    modules.Cout(FILEIDENT, "user request submitted")
-    res.json([true, "User request submitted. Please contact an admin to approve the request", `${FIXEDIPADDRESS}/login`]);
+    modules.Cout(FILEIDENT, "user request submitted");
+    res.json([
+        true,
+        "User request submitted. Please contact an admin to approve the request",
+        `${FIXEDIPADDRESS}/login`,
+    ]);
 });
 
 app.post("/api/login", async (req, res) => {
