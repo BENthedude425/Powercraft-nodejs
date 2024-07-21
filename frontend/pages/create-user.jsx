@@ -1,7 +1,10 @@
 import { React } from "react";
 import "../src/assets/main.css";
+import GetAPIAddr from "../src/assets/getAPIAddr";
+import SendForm from "../src/assets/sendForm"
 
 function Pcreate_user() {
+    const APIADDR = GetAPIAddr();
     return (
         <div className="page" style={{ display: "flex" }}>
             <div className="container_1">
@@ -16,7 +19,7 @@ function Pcreate_user() {
                     />
                 </div>
 
-                <form method="POST" action={`/api/create-user`}>
+                <form id="creation-form">
                     <input
                         type="text"
                         name="username"
@@ -29,17 +32,22 @@ function Pcreate_user() {
                         name="password"
                         className="text_input"
                         placeholder="password"
+                        required
                     />
-                    
+
                     <input
                         type="password"
                         name="password2"
                         className="text_input"
                         placeholder="re-type password"
+                        required
                     />
 
                     <input
-                        type="create-submit"
+                        type="button"
+                        onClick={() => {
+                            SendForm("creation-form", "/api/create-user")
+                        }}
                         value="Create account"
                         className="create-submit"
                     />

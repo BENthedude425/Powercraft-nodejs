@@ -19,6 +19,8 @@ const DEFAULTDBCONFIGS = {
 }
 
 const TABLES = {
+  UserRequests:
+    '(username VARCHAR(255), password VARCHAR(255), date DATE, time TIME)',
   Users:
     '(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))',
   Servers: '(ID INT(255), servername VARCHAR(255), directory VARCHAR(255))'
@@ -38,48 +40,47 @@ async function Setup () {
   FILEPATHS = await modules.GetFilePaths()
   DATABASECONFIGS = await GetDataBaseConfigs()
 
-    await new Promise((resolve, reject) => {
-      CreateDataBase(DATABASECONFIGS.database, async (err, results, fields) => {
-        if (err && results.length == 0) {
-          modules.Cout(
-            FILEIDENT,
-            ('Database could not be created. Exiting setup\n', err)
+  await new Promise((resolve, reject) => {
+    CreateDataBase(DATABASECONFIGS.database, async (err, results, fields) => {
+      if (err && results.length == 0) {
+        modules.Cout(
+          FILEIDENT,
+          ('Database could not be created. Exiting setup\n', err)
+        )
+        return
+      }
+
+      modules.Cout(FILEIDENT, 'Checking all tables are existing')
+      // Connect to the sql server under the database
+      DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS)
+      const TableKeys = Object.keys(TABLES)
+      for (let i = 0; i < TableKeys.length; i++) {
+        tableCreated = false
+        selectedKey = TableKeys[i]
+
+        // Wait for each table to be created
+        await new Promise((resolve, reject) => {
+          DATABASECONNECTION.query(
+            `CREATE TABLE IF NOT EXISTS ${selectedKey} ${TABLES[selectedKey]}`,
+            (err, results, fields) => {
+              if (err) modules.Cout(FILEIDENT, err)
+              resolve()
+            }
           )
-          return
-        }
+        })
+      }
 
-        modules.Cout(FILEIDENT, 'Checking all tables are existing')
-        // Connect to the sql server under the database
-        DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS)
-        const TableKeys = Object.keys(TABLES)
-        for (let i = 0; i < TableKeys.length; i++) {
-          tableCreated = false
-          selectedKey = TableKeys[i]
+      if ((await CheckUserExists()) == false) {
+        err = await CreateRootUser(DATABASECONNECTION)
 
-          // Wait for each table to be created
-          await new Promise((resolve, reject) => {
-            DATABASECONNECTION.query(
-              `CREATE TABLE IF NOT EXISTS ${selectedKey} ${TABLES[selectedKey]}`,
-              (err, results, fields) => {
-                if (err) modules.Cout(FILEIDENT, err)
-                resolve()
-              }
-            )
-          })
-        }
-
-        if ((await CheckUserExists()) == false) {
+        while (err) {
           err = await CreateRootUser(DATABASECONNECTION)
-
-          while (err) {
-            err = await CreateRootUser(DATABASECONNECTION)
-          }
         }
+      }
       resolve()
-      })
     })
+  })
 }
-
 
 function GetDataBaseConfigsFromUser () {
   return (answers = inquirer.prompt([
