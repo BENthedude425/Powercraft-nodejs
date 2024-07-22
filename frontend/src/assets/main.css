@@ -99,7 +99,17 @@
     margin-top: 2vh;
 }
 
+.server_list{
+    width: 15vw;
 
+}
+
+.server_listing{
+    padding: 2%;
+    margin-top: 0.5%;
+    height: 100px;
+    background-color: rgba(83, 82, 82, 0.3);
+}
 
 @media screen and (max-width: 390px){
     .container_1{

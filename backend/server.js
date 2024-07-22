@@ -17,6 +17,7 @@ const {
     CreateRootUser,
 } = require("./setup");
 
+
 const PORT = 8080;
 var DATABASECONNECTION;
 var DATABASECONFIGS;
@@ -41,6 +42,21 @@ async function CheckUserExists(username, password, callback) {
         `SELECT * FROM users WHERE username='${username}' AND password='${hashedPass}'`,
         callback
     );
+}
+
+async function JWTCheck(token) {
+    return new Promise((resolve, reject) => [
+        DATABASECONNECTION.query(
+            `SELECT * FROM users WHERE auth_token='${token}'`,
+            (error, results, fields) => {
+                if (error) {
+                    reject();
+                }
+
+                resolve(results.length > 0);
+            }
+        ),
+    ]);
 }
 
 function HashNewPass(pass) {
@@ -111,8 +127,10 @@ INIT();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({credentials: true, origin: 'http://localhost'}));
 app.use(express.static("public"));
+
+// API ACTIONS
 
 app.post("/api/create-user", async (req, res) => {
     const credentials = {
@@ -226,25 +244,30 @@ app.post("/api/login", async (req, res) => {
     );
 });
 
-app.get("/api/authenticate/*", (req, res) => {
+//
+
+app.get("/api/authenticate/*", async (req, res) => {
     const splitURL = req.path.split("/");
     const token = splitURL[splitURL.length - 1];
+    const auth = await JWTCheck(token);
 
-    DATABASECONNECTION.query(
-        `SELECT * FROM users WHERE auth_token='${token}'`,
-        (err, results, fields) => {
-            res.json([results.length > 0]);
-        }
-    );
+    res.json([auth]);
 });
 
-app.get("/", (req, res) => {
-    res.send([DATABASECONFIGS, req.cookies]);
-});
+// Get Data from database
 
-app.get("/db/*", (req, res) => {
+app.get("/db/*", async (req, res) => {
     const splitPath = req.path.split("/");
     const db = splitPath[splitPath.length - 1];
+
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
 
     DATABASECONNECTION.query(`SELECT * FROM ${db}`, (err, results, fields) => {
         res.send(results);
@@ -266,3 +289,27 @@ app.get("/createnewrootuser", async (req, res) => {
 app.listen(PORT, () => {
     modules.Cout(FILEIDENT, `server started on port ${PORT}`);
 });
+
+function GetCookies(req) {
+    var cookies = [];
+    try {
+        var rawCookies = req.headers.cookie;
+        rawCookies = rawCookies.split(";");
+
+        for (const cookie of rawCookies) {
+            const cookieParts = cookie.split("=");
+
+            cookies[cookieParts[0]] = cookieParts[1];
+        }
+
+        return cookies;
+    } catch {
+        modules.Cout(FILEIDENT, "FAILED TO AUTHENTICATE USER");
+        return false;
+    }
+}
+
+function GetCookie(req, cookieName) {
+    const cookies = GetCookies(req);
+    return cookies[cookieName];
+}
