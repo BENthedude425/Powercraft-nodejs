@@ -23,7 +23,7 @@ const TABLES = {
     '(username VARCHAR(255), password VARCHAR(255), date DATE, time TIME)',
   Users:
     '(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))',
-  Servers: '(ID INT(255), servername VARCHAR(255), directory VARCHAR(255))'
+  Servers: '(ID INT(255), server_name VARCHAR(255), directory VARCHAR(255))'
 }
 
 var FILEPATHS_FILE
