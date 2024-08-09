@@ -1,3 +1,4 @@
+
 .dashboard-header{
     height: 3vh;
     height: auto;
@@ -31,4 +32,34 @@
 .dashboard-content{
     border: 1px solid grey;
     height: 80%;
+}
+
+
+.server_list{
+    transition: 0.5s all ease;
+    width: 500px;
+    overflow-x: auto;
+    padding: 0;
+}
+
+.server_listing{
+    margin-top: 0.5%;
+    height: 100px;
+    background-color: var(--OpaicGrey);
+}
+
+.server_listing img{
+    float: right;
+    height: 100%;
+}
+
+.create_server{
+    background-color: var(--OpaicGrey);
+    height: 150px;
+    text-align: center;
+}
+
+.server_listing, .create_server{
+    padding: 2%;
+
 }

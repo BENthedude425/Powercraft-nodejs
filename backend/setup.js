@@ -1,272 +1,329 @@
-const mysql2 = require('mysql2')
-const fs = require('fs')
-const modules = require('./modules')
-const inquirer = require('inquirer')
-const crypto = require('crypto')
+const mysql2 = require("mysql2");
+const fs = require("fs");
+const modules = require("./modules");
+const inquirer = require("inquirer");
+const crypto = require("crypto");
 
-const FILEPREFIX = modules.GetFilePrefix()
-const FILEIDENT = 'setup.js'
-
-const DEFAULTFILEPATHS = {
-  Database_configs: 'data/DataBaseConfigs.json'
-}
+const FILEPREFIX = modules.GetFilePrefix();
+const FILEIDENT = "setup.js";
 
 const DEFAULTDBCONFIGS = {
-  host: 'localhost',
-  user: 'root',
-  password: 'root',
-  database: 'powercraft'
-}
+    host: "localhost",
+    user: "root",
+    password: "root",
+    database: "powercraft",
+};
 
 const TABLES = {
-  UserRequests:
-    '(username VARCHAR(255), password VARCHAR(255), date DATE, time TIME)',
-  Users:
-    '(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))',
-  Servers: '(ID INT(255), server_name VARCHAR(255), directory VARCHAR(255))'
-}
+    UserRequests:
+        "(username VARCHAR(255), password VARCHAR(255), date DATE, time TIME)",
+    Users: "(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))",
+    Servers:
+        "(ID INT(255), server_name VARCHAR(255), server_directory VARCHAR(255), server_icon_path VARCHAR(255))",
+};
 
-var FILEPATHS_FILE
-var FILEPATHS
-var DATABASECONFIGS
-var DATABASECONNECTION
+const FILES = {
+    Database_configs: ["data/DataBaseConfigs.json", GetDataBaseConfigsFromUser],
+    DefaultMinecraftProperties: [
+        "data/DefaultMinecraftProperties.json",
+        modules.GetServerProperties,
+    ],
+};
 
-async function Setup () {
-  fs.mkdir(FILEPREFIX, err => {
-    return
-  })
+var FILEPATHS_FILE;
+var DATABASECONFIGS;
+var DATABASECONNECTION;
 
-  FILEPATHS_FILE = await modules.GetFilePath()
-  FILEPATHS = await modules.GetFilePaths()
-  DATABASECONFIGS = await GetDataBaseConfigs()
+async function Setup() {
+    fs.mkdir(FILEPREFIX, (err) => {
+        return;
+    });
 
-  await new Promise((resolve, reject) => {
-    CreateDataBase(DATABASECONFIGS.database, async (err, results, fields) => {
-      if (err && results.length == 0) {
-        modules.Cout(
-          FILEIDENT,
-          ('Database could not be created. Exiting setup\n', err)
-        )
-        return
-      }
+    // from modules
+    FILEPATHS_FILE = await modules.GetFilePath();
+    //FILES = await modules.GetFilePaths();
 
-      modules.Cout(FILEIDENT, 'Checking all tables are existing')
-      // Connect to the sql server under the database
-      DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS)
-      const TableKeys = Object.keys(TABLES)
-      for (let i = 0; i < TableKeys.length; i++) {
-        tableCreated = false
-        selectedKey = TableKeys[i]
-
-        // Wait for each table to be created
-        await new Promise((resolve, reject) => {
-          DATABASECONNECTION.query(
-            `CREATE TABLE IF NOT EXISTS ${selectedKey} ${TABLES[selectedKey]}`,
-            (err, results, fields) => {
-              if (err) modules.Cout(FILEIDENT, err)
-              resolve()
-            }
-          )
-        })
-      }
-
-      if ((await CheckUserExists()) == false) {
-        err = await CreateRootUser(DATABASECONNECTION)
-
-        while (err) {
-          err = await CreateRootUser(DATABASECONNECTION)
-        }
-      }
-      resolve()
-    })
-  })
-}
-
-function GetDataBaseConfigsFromUser () {
-  return (answers = inquirer.prompt([
-    {
-      type: 'input',
-      name: 'host',
-      default: 'localhost',
-      message: 'Enter mysql DB address'
-    },
-    {
-      type: 'input',
-      name: 'user',
-      default: 'powercraft_Server',
-      message: 'Enter username of root user'
-    },
-    {
-      type: 'input',
-      name: 'password',
-      default: 'powercraft_pwd',
-      message: 'Enter password for root user'
-    },
-    {
-      type: 'input',
-      name: 'database',
-      default: 'powercraft',
-      message: 'Enter database name'
-    }
-  ]))
-}
-
-function GetRootUserCredentialsFromUser () {
-  return (answers = inquirer.prompt([
-    {
-      type: 'input',
-      name: 'username',
-      default: 'root',
-      message: 'Enter the username of the root powercraft user'
-    },
-    {
-      type: 'password',
-      name: 'password',
-      message: 'Enter the password of the root powercraft user'
-    },
-    {
-      type: 'password',
-      name: 'password2',
-      message: 'Re-enter the password of the root powercraft user'
-    }
-  ]))
-}
-
-async function GetDataBaseConfigs () {
-  if (!fs.existsSync(FILEPATHS.Database_configs)) {
-    DATABASECONFIGS = await GetDataBaseConfigsFromUser()
-
-    fs.writeFileSync(
-      FILEPATHS.Database_configs,
-      JSON.stringify(DATABASECONFIGS)
-    )
-  }
-
-  dbConfigs = modules.GetParsedFile(FILEPATHS.Database_configs)
-  return dbConfigs
-}
-
-function CreateDataBase (databaseName, callback) {
-  TempDBConfigs = Object.assign({}, DATABASECONFIGS)
-  delete TempDBConfigs['database']
-
-  TempDBCONN = mysql2.createConnection(TempDBConfigs)
-
-  TempDBCONN.query(
-    String('CREATE DATABASE IF NOT EXISTS ' + databaseName),
-    callback
-  )
-
-  TempDBCONN.end()
-  modules.Cout(
-    FILEIDENT,
-    `The ${databaseName} database has been loaded successfully`
-  )
-}
-
-async function CheckUserExists (username) {
-  exists = false
-  query = 'SELECT * FROM users'
-
-  if (username != undefined) {
-    query += ` WHERE username = '${username}'`
-  }
-
-  await new Promise((resolve, reject) => {
-    DATABASECONNECTION.query(query, (err, results, fields) => {
-      if (err) {
-        modules.Cout(FILEIDENT, err)
-      }
-      exists = results.length > 0
-      resolve()
-    })
-  })
-
-  return exists
-}
-
-async function CreateRootUser (dbConnection, callback) {
-  modules.Cout(FILEIDENT, 'Please create a new root user')
-  credentials = await GetRootUserCredentialsFromUser()
-
-  if (credentials.password.length == 0 || credentials.password2.length == 0) {
-    WhiteSpace(10)
-    modules.Cout(FILEIDENT, 'Something must be entered in each of the fields.')
-    return true
-  }
-
-  if (credentials.password != credentials.password2) {
-    WhiteSpace(10)
-    modules.Cout(FILEIDENT, 'Both passwords must match')
-    return true
-  }
-
-  if (CheckUserExists(credentials.username)) {
-    overWrite = null
-    while (true) {
-      promptAnswers = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'overWrite',
-          default: 'N',
-          message: `A user with the username: ${credentials.username} already exists. Would you like to over-write? (Y/N)`
-        }
-      ])
-
-      if (promptAnswers.overWrite.toLowerCase() == 'y') {
-        overWrite = true
-        break
-      }
-
-      if (promptAnswers.overWrite.toLowerCase() == 'n') {
-        overWrite = false
-        break
-      }
+    const err = CheckFilesExist();
+    if (err) {
+        modules.Log(FILEIDENT, err);
+        return;
     }
 
-    if (!overWrite) {
-      return
-    }
+    //DATABASECONFIGS = await GetDataBaseConfigs();
+    DATABASECONFIGS = await modules.GetParsedFile(FILES.Database_configs[0]);
 
-    modules.Cout(FILEIDENT, 'Attempting to overwrite the user')
     await new Promise((resolve, reject) => {
-      dbConnection.query(
-        `DELETE FROM users WHERE username = '${credentials.username}'`,
-        (error, results, fields) => {
-          if (error) {
-            modules.Cout(FILEIDENT, error)
-          }
-          resolve()
-        }
-      )
-    })
+        CreateDataBase(
+            DATABASECONFIGS.database,
+            async (err, results, fields) => {
+                if (err && results.length == 0) {
+                    modules.Log(
+                        FILEIDENT,
+                        ("Database could not be created. Exiting setup\n", err)
+                    );
+                    return;
+                }
 
-    modules.Cout(FILEIDENT, 'User overwritten')
-  }
+                modules.Log(FILEIDENT, "Checking all tables are existing");
+                // Connect to the sql server under the database
+                DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS);
 
-  hashedPass = crypto
-    .createHash('sha256')
-    .update(credentials.password)
-    .digest('hex')
+                const TableKeys = Object.keys(TABLES);
+                for (let i = 0; i < TableKeys.length; i++) {
+                    tableCreated = false;
+                    selectedKey = TableKeys[i];
 
-  dbConnection.query(
-    `INSERT INTO users VALUES (0, '${credentials.username}', '${hashedPass}', 1, '')`,
-    callback
-  )
-  return false
+                    await new Promise((resolve, reject) => {
+                        CheckTableExists(resolve, selectedKey);
+                    });
+                }
+
+                if ((await CheckUserExists()) == false) {
+                    await CreateRootUser(DATABASECONNECTION);
+                }
+
+                resolve();
+            }
+        );
+    });
 }
 
-function WhiteSpace (numberOfLines) {
-  var whiteSpace = ''
+async function CheckFilesExist() {
+    const fileKeys = Object.keys(FILES);
 
-  for (let i = 0; i < numberOfLines; i++) {
-    whiteSpace += '\n'
-  }
+    // loop each file and if they dont exist
+    // write a file with the contents returned by its callback
+    for (const key of fileKeys) {
+        const selectedFile = FILES[key];
+        const filePath = selectedFile[0];
+        const callBack = selectedFile[1];
 
-  console.log(whiteSpace)
+        if (!fs.existsSync(filePath)) {
+            const fileContents = await callBack();
+
+            fs.writeFileSync(filePath, JSON.stringify(fileContents, null, 4));
+        }
+    }
+}
+
+async function GetDataBaseConfigs() {
+    if (!fs.existsSync(FILES.Database_configs[0])) {
+        DATABASECONFIGS = await GetDataBaseConfigsFromUser();
+
+        fs.writeFileSync(
+            FILES.Database_configs[0],
+            JSON.stringify(DATABASECONFIGS)
+        );
+    }
+
+    dbConfigs = modules.GetParsedFile(FILES.Database_configs[0]);
+    return dbConfigs;
+}
+
+async function CheckUserExists(username) {
+    exists = false;
+    query = "SELECT * FROM users";
+
+    if (username != undefined) {
+        query += ` WHERE username = '${username}'`;
+    }
+
+    await new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(query, (err, results, fields) => {
+            if (err) {
+                modules.Log(FILEIDENT, err);
+            }
+            exists = results.length > 0;
+            resolve();
+        });
+    });
+
+    return exists;
+}
+
+function ValidateUserCreds(credentials) {
+    var err = false;
+    const keys = Object.keys(credentials);
+
+    for (const key of keys) {
+        const selectedCred = credentials[key];
+
+        if (selectedCred.length == 0) {
+            modules.Log(FILEIDENT, "All fields must be filled");
+            err = true;
+        }
+    }
+
+    if (credentials.password != credentials.password2) {
+        modules.Log(FILEIDENT, "Both passwords must match");
+        err = true;
+    }
+
+    return err;
+}
+
+function WhiteSpace(numberOfLines) {
+    var whiteSpace = "";
+
+    for (let i = 0; i < numberOfLines; i++) {
+        whiteSpace += "\n";
+    }
+
+    console.log(whiteSpace);
+}
+
+//---Database Creation---\\\
+
+function CreateDataBase(databaseName, callback) {
+    TempDBConfigs = Object.assign({}, DATABASECONFIGS);
+    delete TempDBConfigs["database"];
+
+    TempDBCONN = mysql2.createConnection(TempDBConfigs);
+
+    TempDBCONN.query(
+        String("CREATE DATABASE IF NOT EXISTS " + databaseName),
+        callback
+    );
+
+    TempDBCONN.end();
+    modules.Log(
+        FILEIDENT,
+        `The ${databaseName} database has been loaded successfully`
+    );
+}
+
+async function CreateRootUser(dbConnection) {
+    credentials = await GetRootUserCredentialsFromUser();
+
+    // Recur if the credentials provided are unsuitable
+    if (ValidateUserCreds(credentials)) {
+        CreateRootUser(dbConnection);
+        return;
+    }
+
+    if (CheckUserExists(credentials.username)) {
+        const overWrite = GetOverWriteFromUser();
+        if (!overWrite) {
+            return;
+        }
+
+        modules.Log(FILEIDENT, "Attempting to overwrite the user");
+        await new Promise((resolve, reject) => {
+            dbConnection.query(
+                `DELETE FROM users WHERE username = '${credentials.username}'`,
+                (error, results, fields) => {
+                    if (error) {
+                        modules.Log(FILEIDENT, error);
+                    }
+                    resolve();
+                }
+            );
+        });
+
+        modules.Log(FILEIDENT, "User overwritten");
+    }
+
+    hashedPass = crypto
+        .createHash("sha256")
+        .update(credentials.password)
+        .digest("hex");
+
+    dbConnection.query(
+        `INSERT INTO users VALUES (0, '${credentials.username}', '${hashedPass}', 1, '')`,
+        callback
+    );
+    return false;
+}
+
+function CheckTableExists(resolve, selectedKey) {
+    DATABASECONNECTION.query(
+        `CREATE TABLE IF NOT EXISTS ${selectedKey} ${TABLES[selectedKey]}`,
+        (err, results, fields) => {
+            if (err) modules.Log(FILEIDENT, err);
+            resolve();
+        }
+    );
+}
+
+//---Get user input -- \\
+
+function GetRootUserCredentialsFromUser() {
+    return (answers = inquirer.prompt([
+        {
+            type: "input",
+            name: "username",
+            default: "root",
+            message: "Enter the username of the root powercraft user",
+        },
+        {
+            type: "password",
+            name: "password",
+            message: "Enter the password of the root powercraft user",
+        },
+        {
+            type: "password",
+            name: "password2",
+            message: "Re-enter the password of the root powercraft user",
+        },
+    ]));
+}
+
+async function GetOverWriteFromUser() {
+    overWrite = null;
+    while (true) {
+        promptAnswers = await inquirer.prompt([
+            {
+                type: "input",
+                name: "overWrite",
+                default: "N",
+                message: `A user with the username: ${credentials.username} already exists. Would you like to over-write? (Y/N)`,
+            },
+        ]);
+
+        if (promptAnswers.overWrite.toLowerCase() == "y") {
+            overWrite = true;
+            break;
+        }
+
+        if (promptAnswers.overWrite.toLowerCase() == "n") {
+            overWrite = false;
+            break;
+        }
+    }
+
+    return overWrite;
+}
+
+function GetDataBaseConfigsFromUser() {
+    return (answers = inquirer.prompt([
+        {
+            type: "input",
+            name: "host",
+            default: "localhost",
+            message: "Enter mysql DB address",
+        },
+        {
+            type: "input",
+            name: "user",
+            default: "powercraft_Server",
+            message: "Enter username of root user",
+        },
+        {
+            type: "input",
+            name: "password",
+            default: "powercraft_pwd",
+            message: "Enter password for root user",
+        },
+        {
+            type: "input",
+            name: "database",
+            default: "powercraft",
+            message: "Enter database name",
+        },
+    ]));
 }
 
 module.exports = {
-  Setup,
-  CreateRootUser
-}
+    Setup,
+    CreateRootUser,
+};

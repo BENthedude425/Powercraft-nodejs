@@ -2,7 +2,7 @@ import { React } from "react";
 import { useSpring, animated } from "react-spring";
 import "../assets/sidebar.css";
 
-export default function SideBar() {
+function SideBar() {
   return (
     <div className="sidebar">
       <span href="/login">Chat</span>
@@ -25,3 +25,8 @@ export default function SideBar() {
     </div>
   );
 }
+
+module.exports(
+  SideBar,
+  ToggleNav
+);
