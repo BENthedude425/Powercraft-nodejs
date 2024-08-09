@@ -1,0 +1,94 @@
+.server_content {
+    padding: 0.5%;
+    height: 30vh;
+    width: 100%;
+
+    background-color: var(--OpaicGrey);
+}
+
+.server_image_main {
+    height: 250px;
+    width: 250px;
+}
+
+.server_name {
+    display: flex;
+    min-width: max-content;
+
+    margin-left: 0.5%;
+    font-size: 75px;
+    border-radius: 2px;
+    height: 75px;
+}
+
+.control_area {
+    display: grid;
+    column-gap: 25px;
+    row-gap: 25px;
+    flex-grow: 1;
+}
+
+.control_area span {
+    height: 128px;
+    width: 128px;
+    background-color: rgb(108, 255, 89);
+}
+
+.side_bar{
+    transition: all 0.5s ease;
+    background-color: var(--OpaicGrey);
+    border-right: 1px solid var(--Grey);
+    height: 100vh;
+    width: 250px;
+}
+
+.side_bar li{
+    transition: all 0.5s ease;
+    list-style: none;
+    padding-left: 2.5%;
+    font-size: 20px;
+    height: auto;
+    padding: 7.5%;
+    border-bottom: 1px solid var(--Grey);
+    text-align: center;
+}
+
+.white{
+    background-color: white;
+}
+
+.side_bar li:hover{
+    font-size: 25px;
+}
+
+.server_controls button{
+    transition: 0.5s ease all;
+    border: none;
+    padding: 2%;
+    font-size: 25px;
+
+}
+
+.server_controls button:hover{
+    padding: 2.25%;
+}
+
+.container{
+    display: flex;
+}
+
+@media only screen and (max-width: 400px) {
+    .server_image_main {
+        height: 100px;
+        width: 100px;
+    }
+
+    .server_name {
+        font-size: 35px;
+        height: 35px;
+    }
+
+    .side_bar{
+        display: none;
+    }
+}

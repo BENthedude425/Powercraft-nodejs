@@ -1,6 +1,5 @@
 import {React} from "react";
 
-import SideBar from "../src/components/SideBar";
 import Header from "../src/components/Header";
 import ServerList from "../src/components/ServerList";
 
@@ -18,7 +17,6 @@ export default function PDashboard(){
                 
                 <div className="dashboard-container">
                     <div className="dashboard-content">
-                        container
                     </div>
                 </div>
 

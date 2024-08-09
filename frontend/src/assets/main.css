@@ -1,3 +1,13 @@
+:root{
+    --PowercraftColorGradient: linear-gradient(to bottom right, rgb(0, 200, 255), rgb(0, 140, 255));
+    --PowercraftColor: rgb(0, 140, 255);
+
+    --OpaicGrey:rgba(83, 82, 82, 0.1);
+    --Grey: rgba(83, 82, 82, 0.346);
+    
+    
+}
+
 .container_1{
     background-color: white;
     border-radius: 10px;
@@ -97,18 +107,6 @@
     width: 600px;
     height: 75px;
     margin-top: 2vh;
-}
-
-.server_list{
-    width: 15vw;
-
-}
-
-.server_listing{
-    padding: 2%;
-    margin-top: 0.5%;
-    height: 100px;
-    background-color: rgba(83, 82, 82, 0.3);
 }
 
 @media screen and (max-width: 390px){

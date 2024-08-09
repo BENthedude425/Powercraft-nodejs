@@ -10,6 +10,10 @@ import PIndex from "../pages/index";
 import Pcreate_user from "../pages/create-user";
 import Plogin from "../pages/login";
 import PDashboard from "../pages/dashboard";
+import PCreateServer from "../pages/create-server.jsx"
+
+
+import PTest  from "../pages/testpage"
 
 export default function App() {
     return (
@@ -19,8 +23,11 @@ export default function App() {
                 <Route path="login" element={<Plogin />} />
                 <Route path="create-user" element={<Pcreate_user />} />
 
+                <Route path="test" element={<PTest />} />
+
                 <Route element={<ProtectedRoute />}>
                     <Route path="dashboard" element={<PDashboard />} />
+                    <Route path="create-server" element={<PCreateServer />} />
                 </Route>
             </Routes>
         </BrowserRouter>
