@@ -1,21 +1,21 @@
-import React from "react";
+// Filename - App.js
 
-import "../src/assets/servercontent.css";
+import React, { useState } from "react";
 
-import Header from "../src/components/Header";
-import ServerContent from "../src/components/ServerContent";
-import {ServerSideBar, ToggleServerSideBar} from "../src/components/ServerSideBar";
+const PTest = () => {
+    const [file, setFile] = useState();
+    function handleChange(e) {
+        console.log(e.target.files);
+        setFile(URL.createObjectURL(e.target.files[0]));
+    }
 
-export default function PTest() {
     return (
-        <div>
-            <Header id="sidebar"/>
-            <div className="container">
-                <ServerSideBar />
-
-                <ServerContent />
-
-            </div>
+        <div className="App">
+            <h2>Add Image:</h2>
+            <input type="file" onChange={handleChange} />
+            <img src={file} />
         </div>
     );
 }
+
+export default PTest;

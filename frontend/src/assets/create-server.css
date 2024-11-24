@@ -1,0 +1,20 @@
+.option-grid{
+    margin-top: 50px;
+    margin-left: 100px;
+    display: grid;
+    grid-template-columns: 550px 550px 550px;
+}
+
+.item{
+    font-size: 25px;
+    float: right;
+}
+
+.wrapper{
+    font-size: 25px;
+    display: inline;
+    border: 1px solid black;
+    padding: 2%;
+    width: 500px;
+    box-sizing: border-box;
+}
