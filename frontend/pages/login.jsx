@@ -1,9 +1,23 @@
-import { React } from "react";
+import { React, useEffect } from "react";
 import "../src/assets/main.css";
+import {useNavigate} from "react-router-dom";
 import GetAPIAddr from "../src/assets/getAPIAddr";
+import CheckAuth from "../src/CheckAuth";
 
 export default function Plogin() {
+    const navigate = useNavigate()
     const APIADDR = GetAPIAddr();
+    const auth = CheckAuth()
+
+
+    // If the user already has auth redirect to dashboard
+    useEffect(() =>{
+        if (auth){
+            return(
+                navigate("/dashboard")
+            )
+        }
+    }, [])
 
     return (
         <div className="page" style={{ display: "flex" }}>

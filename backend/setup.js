@@ -14,6 +14,7 @@ const DEFAULTDBCONFIGS = {
     database: "powercraft",
 };
 
+
 const TABLES = {
     UserRequests:
         "(username VARCHAR(255), password VARCHAR(255), date DATE, time TIME)",
@@ -43,7 +44,7 @@ async function Setup() {
     FILEPATHS_FILE = await modules.GetFilePath();
     //FILES = await modules.GetFilePaths();
 
-    const err = CheckFilesExist();
+    const err = await CheckFilesExist();
     if (err) {
         modules.Log(FILEIDENT, err);
         return;

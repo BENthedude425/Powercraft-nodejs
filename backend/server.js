@@ -4,9 +4,8 @@ const mysql2 = require("mysql2");
 const app = express();
 
 const cookieParser = require("cookie-parser");
-const bodyParser = require("body-parser");
 const multer = require("multer");
-const upload = multer();
+const fileUpload = require("express-fileupload");
 
 const modules = require("./modules");
 const crypto = require("crypto");
@@ -16,6 +15,8 @@ const {
     GetRootUserCredentialsFromUser,
     CreateRootUser,
 } = require("./setup");
+const { readFileSync, writeFileSync } = require("fs");
+const { filledInputClasses } = require("@mui/material");
 
 const PORT = 8080;
 var DATABASECONNECTION;
@@ -36,7 +37,6 @@ async function InitialiseDB() {
 }
 
 async function CheckUserExists(username, password, callback) {
-    success = false;
     hashedPass = HashNewPass(password);
     DATABASECONNECTION.query(
         `SELECT * FROM users WHERE username='${username}' AND password='${hashedPass}'`,
@@ -129,6 +129,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({ credentials: true, origin: FIXEDIPADDRESS }));
 app.use(express.static("public"));
+app.use(fileUpload());
 
 // API ACTIONS
 
@@ -144,12 +145,12 @@ app.post("/api/create-user", async (req, res) => {
     credentials["password"] = req.body.password;
     credentials["password2"] = req.body.password2;
 
-    for(const key of credentialsKeys){
+    for (const key of credentialsKeys) {
         const selectedCredential = credentials[key];
 
-        if(selectedCredential.length == 0){
-            res.json([false, "make sure that all fields are filled"])
-            return
+        if (selectedCredential.length == 0) {
+            res.json([false, "make sure that all fields are filled"]);
+            return;
         }
     }
 
@@ -229,9 +230,74 @@ app.post("/api/create-user", async (req, res) => {
     ]);
 });
 
-app.post("/api/create-server", async(req, res) =>{
-    
-})
+function FormatServerData(req) {
+    const bodyKeys = Object.keys(req.body);
+    var properties = "";
+    var serverSettings = {};
+
+    for (key of bodyKeys) {
+        if (key.startsWith("property:")) {
+            properties += key.slice(9, key.length) + "=" + req.body[key] + "\n";
+        } else {
+            serverSettings[key] = req.body[key];
+        }
+    }
+
+    try{
+        serverSettings.image_path = req.files.server_img.name;
+        serverSettings.image_path = ReplaceAll(serverSettings.image_path, " ", "-");
+    }catch{
+        serverSettings.image_path = "default.png";
+    }
+
+    return [properties, serverSettings];
+}
+
+function ReplaceAll(string, searchStr, replaceStr) {
+    const split = string.split(searchStr);
+    return split.join(replaceStr);
+}
+
+app.post("/api/create-server", async (req, res) => {
+    const [properties, serverSettings] = FormatServerData(req);
+    console.log(serverSettings.image_path);
+    const ID = await new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(
+            `SELECT * FROM servers`,
+            (error, results, _) => {
+                if (error != null) {
+                    modules.log(error);
+                    return;
+                }
+
+                resolve(results.length);
+            }
+        );
+    });
+
+    if (serverSettings.image_path != "default.png") {
+        writeFileSync(
+            `${process.cwd()}/images/${serverSettings.image_path}`,
+            req.files.server_img.data
+        );
+    }
+
+    DATABASECONNECTION.query(
+        `INSERT INTO servers(id, server_name, server_directory, server_icon_path) VALUES (${ID}, "${serverSettings.server_name}", "${serverSettings.server_name}", "${serverSettings.image_path}")`,
+        (error, results, fields) => {
+            if (error != null) {
+                modules.log(error);
+            }
+        }
+    );
+
+    // add server to sql db
+    // create a directory
+    // create properties file
+    // download jar file
+
+    res.redirect(`${FIXEDIPADDRESS}/dashboard`);
+});
 
 app.post("/api/login", async (req, res) => {
     CheckUserExists(
@@ -244,8 +310,10 @@ app.post("/api/login", async (req, res) => {
 
             newToken = await GenerateAuthToken();
 
-            if(results.length == 0){
-                res.redirect(`${FIXEDIPADDRESS}/login`)
+            console.log(results);
+
+            if (results.length == 0) {
+                res.redirect(`${FIXEDIPADDRESS}/login`);
                 return;
             }
 
@@ -256,14 +324,13 @@ app.post("/api/login", async (req, res) => {
                     }
                 }
 
-                res.cookie("auth_token", newToken);
+                modules.Log(FILEIDENT, "logged in user");
+                res.cookie("auth_token", newToken, { maxAge: 9999999 });
                 res.redirect(`${FIXEDIPADDRESS}/dashboard`);
             });
         }
     );
 });
-
-//
 
 app.get("/api/authenticate/*", async (req, res) => {
     const splitURL = req.path.split("/");
@@ -273,27 +340,35 @@ app.get("/api/authenticate/*", async (req, res) => {
     res.json([auth]);
 });
 
-app.get("/api/get-server/*", async(req, res) =>{
+app.get("/api/get-server/*", async (req, res) => {
     const splitPath = req.path.split("/");
     const serverName = splitPath[splitPath.length - 1];
 
     // fetch data based on the server name
 
-    if(serverName == "server1"){
+    if (serverName == "server1") {
         res.json([false]);
     }
-})
+});
 
-app.get("/api/get-server-properties", async(req, res) =>{
-    res.jsonp(modules.GetServerProperties())
-})
+app.get("/api/get-server-properties", async (req, res) => {
+    res.jsonp(modules.GetServerProperties());
+});
+
+app.get("/api/get-server-versions", async (req, res) => {
+    let contents = await readFileSync("Output.json", { encoding: "utf8" }); // Change to get the data from an endpoint
+    contents = JSON.parse(contents);
+    res.jsonp(contents);
+});
 
 app.get("/images/*", async (req, res) => {
     const splitPath = req.path.split("/");
-    const picturePath = `${process.cwd()}/images/${splitPath[splitPath.length - 1]}`;
+    const picturePath = `${process.cwd()}/images/${
+        splitPath[splitPath.length - 1]
+    }`;
     console.log(picturePath);
     res.sendFile(picturePath, (error) => {
-        if(error){
+        if (error) {
             modules.Log(FILEIDENT, error);
         }
     });
@@ -358,6 +433,5 @@ function GetCookie(req, cookieName) {
     const cookies = GetCookies(req);
     return cookies[cookieName];
 }
-
 
 //            URL STRUCT "/api/servers/'servername'/page"

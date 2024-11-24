@@ -14,7 +14,7 @@ function Server(props) {
 }
 
 function Redirect(){
-    window.location = "/createserver";
+    window.location = "/create-server";
 }
 
 function CreateServerButton() {

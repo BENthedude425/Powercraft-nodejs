@@ -109,6 +109,11 @@
     margin-top: 2vh;
 }
 
+.server_listing img{
+    width: 128px;
+    height: 128px;
+}
+
 @media screen and (max-width: 390px){
     .container_1{
         width: 100vw;
