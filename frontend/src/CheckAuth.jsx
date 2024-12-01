@@ -1,7 +1,7 @@
 import Cookies from "universal-cookie";
 import GetAPIAddr from "./assets/getAPIAddr";
 
-export default function CheckAuth() {
+export default async function CheckAuth() {
   const APIADDR = GetAPIAddr();
   return new Promise(function (resolve, reject) {
     const cookies = new Cookies();
