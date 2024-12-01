@@ -14,7 +14,6 @@ const DEFAULTDBCONFIGS = {
     database: "powercraft",
 };
 
-
 const TABLES = {
     UserRequests:
         "(username VARCHAR(255), password VARCHAR(255), date DATE, time TIME)",

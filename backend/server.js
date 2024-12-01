@@ -9,14 +9,16 @@ const fileUpload = require("express-fileupload");
 
 const modules = require("./modules");
 const crypto = require("crypto");
+const fs = require("fs");
 
-const {
-    Setup,
-    GetRootUserCredentialsFromUser,
-    CreateRootUser,
-} = require("./setup");
+const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { filledInputClasses } = require("@mui/material");
+const { ErrorSharp } = require("@mui/icons-material");
+const { error, Console } = require("console");
+const { FILE, getServers } = require("dns");
+const { checkServerIdentity } = require("tls");
+const { create } = require("domain");
 
 const PORT = 8080;
 var DATABASECONNECTION;
@@ -103,6 +105,38 @@ async function GenerateAuthToken() {
 
     modules.Log(FILEIDENT, `Generated new auth token: ${authToken}`);
     return authToken;
+}
+
+function FormatServerData(req) {
+    const bodyKeys = Object.keys(req.body);
+    var properties = "";
+    var serverSettings = {};
+
+    for (key of bodyKeys) {
+        if (key.startsWith("property:")) {
+            properties += key.slice(9, key.length) + "=" + req.body[key] + "\n";
+        } else {
+            serverSettings[key] = req.body[key];
+        }
+    }
+
+    try {
+        serverSettings.image_path = req.files.server_img.name;
+        serverSettings.image_path = ReplaceAll(
+            serverSettings.image_path,
+            " ",
+            "-"
+        );
+    } catch {
+        serverSettings.image_path = "default.png";
+    }
+
+    return [properties, serverSettings];
+}
+
+function ReplaceAll(string, searchStr, replaceStr) {
+    const split = string.split(searchStr);
+    return split.join(replaceStr);
 }
 
 async function LoadConfigs() {
@@ -230,32 +264,34 @@ app.post("/api/create-user", async (req, res) => {
     ]);
 });
 
-function FormatServerData(req) {
-    const bodyKeys = Object.keys(req.body);
-    var properties = "";
-    var serverSettings = {};
-
-    for (key of bodyKeys) {
-        if (key.startsWith("property:")) {
-            properties += key.slice(9, key.length) + "=" + req.body[key] + "\n";
-        } else {
-            serverSettings[key] = req.body[key];
-        }
-    }
-
-    try{
-        serverSettings.image_path = req.files.server_img.name;
-        serverSettings.image_path = ReplaceAll(serverSettings.image_path, " ", "-");
-    }catch{
-        serverSettings.image_path = "default.png";
-    }
-
-    return [properties, serverSettings];
+function GetServerPath(serverName) {
+    const path = `${process.cwd()}/../servers/${serverName}`;
+    return path;
 }
 
-function ReplaceAll(string, searchStr, replaceStr) {
-    const split = string.split(searchStr);
-    return split.join(replaceStr);
+function CreateServerDir(serverName) {
+    const serversDir = GetServerPath("");
+    const serverPath = GetServerPath(serverName)
+
+    if (!fs.existsSync(serversDir)) {
+        fs.mkdirSync(serversDir)
+    }
+
+    fs.mkdirSync(serverPath);
+    modules.Log(FILEIDENT, "Servers directory created.");CreateServerDir
+    return true;
+}
+
+function CreateServer(serverName, propertiesString) {
+    const path = GetServerPath(serverName);
+    const propertiesPath = `${path}/server.properties`;
+    CreateServerDir(serverName);
+
+    fs.writeFileSync(propertiesPath, propertiesString);
+
+    // create a directory
+    // create properties file
+    // download jar file
 }
 
 app.post("/api/create-server", async (req, res) => {
@@ -266,7 +302,7 @@ app.post("/api/create-server", async (req, res) => {
             `SELECT * FROM servers`,
             (error, results, _) => {
                 if (error != null) {
-                    modules.log(error);
+                    modules.Log(error);
                     return;
                 }
 
@@ -282,14 +318,17 @@ app.post("/api/create-server", async (req, res) => {
         );
     }
 
+    // Create entry in the table
     DATABASECONNECTION.query(
         `INSERT INTO servers(id, server_name, server_directory, server_icon_path) VALUES (${ID}, "${serverSettings.server_name}", "${serverSettings.server_name}", "${serverSettings.image_path}")`,
         (error, results, fields) => {
             if (error != null) {
-                modules.log(error);
+                modules.Log(error);
             }
         }
     );
+
+    CreateServer(serverSettings.server_name, properties);
 
     // add server to sql db
     // create a directory
@@ -309,8 +348,6 @@ app.post("/api/login", async (req, res) => {
             }
 
             newToken = await GenerateAuthToken();
-
-            console.log(results);
 
             if (results.length == 0) {
                 res.redirect(`${FIXEDIPADDRESS}/login`);
@@ -366,7 +403,7 @@ app.get("/images/*", async (req, res) => {
     const picturePath = `${process.cwd()}/images/${
         splitPath[splitPath.length - 1]
     }`;
-    console.log(picturePath);
+
     res.sendFile(picturePath, (error) => {
         if (error) {
             modules.Log(FILEIDENT, error);
@@ -411,27 +448,32 @@ app.listen(PORT, () => {
 });
 
 function GetCookies(req) {
-    var cookies = [];
-    try {
-        var rawCookies = req.headers.cookie;
-        rawCookies = rawCookies.split(";");
+    var rawCookies = req.cookies;
 
-        for (const cookie of rawCookies) {
-            const cookieParts = cookie.split("=");
-
-            cookies[cookieParts[0]] = cookieParts[1];
-        }
-
-        return cookies;
-    } catch {
-        modules.Log(FILEIDENT, "FAILED TO AUTHENTICATE USER");
+    if (rawCookies == undefined) {
         return false;
     }
+
+    if (rawCookies.length == 0) {
+        return false;
+    }
+
+    return rawCookies;
 }
 
 function GetCookie(req, cookieName) {
     const cookies = GetCookies(req);
-    return cookies[cookieName];
+    try {
+        const cookie = cookies[cookieName];
+        return cookie;
+    } catch (err) {
+        modules.log(
+            FILEIDENT,
+            `There was an error getting cookie (${cookieName}). Error: ${err}`
+        );
+    }
+
+    return false;
 }
 
-//            URL STRUCT "/api/servers/'servername'/page"
+//  URL STRUCT "/api/servers/'servername'/page"

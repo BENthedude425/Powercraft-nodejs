@@ -1,2 +1,4 @@
 .json
 /backend/images/*
+.VSCodeCounter
+servers
