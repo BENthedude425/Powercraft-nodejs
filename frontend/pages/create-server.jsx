@@ -102,6 +102,7 @@ export default function PCreateServer() {
                 </select>
 
                 <select
+                    name="forgeReleaseSelect"
                     id="forgeReleaseSelect"
                     style={{ visibility: "Hidden" }}
                 >

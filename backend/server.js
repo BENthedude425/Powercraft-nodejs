@@ -4,7 +4,6 @@ const mysql2 = require("mysql2");
 const app = express();
 
 const cookieParser = require("cookie-parser");
-const multer = require("multer");
 const fileUpload = require("express-fileupload");
 
 const modules = require("./modules");
@@ -13,12 +12,6 @@ const fs = require("fs");
 
 const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
-const { filledInputClasses } = require("@mui/material");
-const { ErrorSharp } = require("@mui/icons-material");
-const { error, Console } = require("console");
-const { FILE, getServers } = require("dns");
-const { checkServerIdentity } = require("tls");
-const { create } = require("domain");
 
 const PORT = 8080;
 var DATABASECONNECTION;
@@ -271,27 +264,72 @@ function GetServerPath(serverName) {
 
 function CreateServerDir(serverName) {
     const serversDir = GetServerPath("");
-    const serverPath = GetServerPath(serverName)
+    const serverPath = GetServerPath(serverName);
 
     if (!fs.existsSync(serversDir)) {
-        fs.mkdirSync(serversDir)
+        fs.mkdirSync(serversDir);
     }
 
     fs.mkdirSync(serverPath);
-    modules.Log(FILEIDENT, "Servers directory created.");CreateServerDir
+    modules.Log(FILEIDENT, "Servers directory created.");
+    CreateServerDir;
     return true;
 }
 
-function CreateServer(serverName, propertiesString) {
+async function CreateServer(serverSettings, propertiesString) {
+    let sources = await readFileSync("Output.json", { encoding: "utf8" });
+    sources = JSON.parse(sources);
+
+    const serverName = serverSettings.server_name;
+    const launcherType = serverSettings.launcherTypeSelect;
+    const version = serverSettings.versionSelect;
+
+    let launcherFileName = ""
+    let link = sources[launcherType];
+    link = link[version];
+
+    if (launcherType == "Forge") {
+        const forgeRelease = serverSettings.forgeReleaseSelect;
+
+        for (let i = 0; i < link.length; i++) {
+            const selectedLink = link[i];
+            if (selectedLink.release == forgeRelease) {
+                link = selectedLink.link;
+                launcherFileName = `forge-${version}-${selectedLink.release}.jar`
+                break;
+            }
+        }
+    }else{
+        const launcherFileName = link.file;
+        link = link.link;
+    }
+
+
+    console.log(launcherFileName)    
+    console.log(link)
+    
+    
+    // Get all paths for files
     const path = GetServerPath(serverName);
     const propertiesPath = `${path}/server.properties`;
+    const launcherFilePath = `${path}/${launcherFileName}`;
+
+    // Create the server directory
     CreateServerDir(serverName);
-
-    fs.writeFileSync(propertiesPath, propertiesString);
-
-    // create a directory
-    // create properties file
+    // Create the properties file
+    await fs.writeFileSync(propertiesPath, propertiesString);
     // download jar file
+
+    const fileContents = await DownloadFile(link);
+    var buffer = await fileContents.arrayBuffer();
+    buffer = Buffer.from( buffer)
+    fs.createWriteStream(launcherFilePath).write(buffer);
+
+    //await fs.writeFileSync(launcherFilePath, fileContents);
+}
+
+async function DownloadFile(URL) {
+    return await fetch(URL).then((res) => res.blob());
 }
 
 app.post("/api/create-server", async (req, res) => {
@@ -311,6 +349,7 @@ app.post("/api/create-server", async (req, res) => {
         );
     });
 
+    // if no image is attached use default one
     if (serverSettings.image_path != "default.png") {
         writeFileSync(
             `${process.cwd()}/images/${serverSettings.image_path}`,
@@ -328,7 +367,7 @@ app.post("/api/create-server", async (req, res) => {
         }
     );
 
-    CreateServer(serverSettings.server_name, properties);
+    CreateServer(serverSettings, properties);
 
     // add server to sql db
     // create a directory
