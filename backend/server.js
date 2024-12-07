@@ -3,6 +3,8 @@ const cors = require("cors");
 const mysql2 = require("mysql2");
 const app = express();
 
+const sleep = require('system-sleep')
+
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
 
@@ -325,6 +327,7 @@ async function CreateServer(serverSettings, propertiesString) {
     // Get all paths for files
     const path = GetServerPath(serverName);
     const propertiesPath = `${path}/server.properties`;
+    const terminalPath = `${path}/terminal.txt`;
     const launcherFilePath = `${path}/${launcherFileName}`;
 
     // Create the server directory
@@ -332,6 +335,9 @@ async function CreateServer(serverSettings, propertiesString) {
 
     // Create the properties file
     await fs.writeFileSync(propertiesPath, propertiesString);
+
+    // Create the terminal log file
+    await fs.writeFileSync(terminalPath, "");
 
     // Download jar file
     await DownloadAndSaveFile(link, launcherFilePath);
@@ -399,37 +405,35 @@ app.post("/api/create-server", async (req, res) => {
     // Create directory and download files and return path to the executable
     const launcherFileName = await CreateServer(serverSettings, properties);
 
+    res.redirect(`${FIXEDIPADDRESS}/dashboard`);
+
     // Install server
     // java -jar filename --installServer
     modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Installing server");
 
-    const path = GetServerPath(serverSettings.server_name);
-    const command = `cd ${path} && java -jar ${launcherFileName} --installServer`;
-    
+    const serverPath = GetServerPath(serverSettings.server_name);
+    const terminalLogPath = `${serverPath}/terminal.txt`;
+    const command = `cd ${serverPath} && java -jar ${launcherFileName} --installServer`;
     const installer_process = exec(command);
 
-    installer_process.stdout.on("data", (data) =>{
-        console.log(data)
-    })
+    installer_process.stdout.on("data", (data) => {
+        fs.appendFileSync(terminalLogPath, data);
+    });
 
-    installer_process.stderr.on("data", (data) =>{
-        console.log(data)
-    })
+    installer_process.stderr.on("data", (data) => {
+        fs.appendFileSync(terminalLogPath, data);
+    });
 
-    
-    installer_process.on("exit", (code) =>{
-        modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install complete");    
-        ChangeServerStatus(serverSettings.ID, "ready")
-    })
-
-    
+    installer_process.on("exit", (code) => {
+        modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install complete");
+        fs.appendFileSync(terminalLogPath, `Install complete! \n`);
+        ChangeServerStatus(serverSettings.ID, "ready");
+    });
 
     // add server to sql db
     // create a directory
     // create properties file
     // download jar file
-
-    res.redirect(`${FIXEDIPADDRESS}/dashboard`);
 });
 
 app.post("/api/login", async (req, res) => {
@@ -498,7 +502,7 @@ app.get("/api/get-server-data/*", async (req, res) => {
         `SELECT * FROM servers WHERE ID = ${serverID}`,
         (error, results, _) => {
             if (error != null) {
-                modules.log(FILEIDENT, error);
+                modules.Log(FILEIDENT, error);
                 res.send(error);
                 return;
             }
@@ -514,10 +518,84 @@ function GetServerIDFromURL(req) {
 }
 
 app.get("/api/get-server-terminal*", async (req, res) => {
-    const serverID = GetServerIDFromURL(req);
+    const LINELIMIT = 250;
 
-    res.send(GetServerTerminal(serverID));
+    console.log(req.path)
+
+    let url = req.path.split("/");
+    const serverID = url[url.length - 1];
+    const terminalLen = url[url.length - 2];
+    const server = await GetServerFromID(serverID);
+    const path = GetServerPath(server.server_name) + "/terminal.txt";
+    //terminalData = await WaitForTerminal(terminalLen, server.server_name, req);
+
+    var timer = setInterval(() => {
+
+        // Get the last x amount of lines
+        fileContents = fs.readFileSync(path);
+        fileContents = fileContents.toString().split("\n");
+    
+        fileLen = fileContents.length;
+    
+        fileContents = fileContents.slice(fileLen - LINELIMIT)
+        //fileContents = fileContents.join("\n");
+        
+
+        console.log(fileLen , terminalLen, fileLen != terminalLen, res.closed)
+        if(fileLen != terminalLen || res.closed){
+            res.json([fileLen, fileContents]);
+            clearInterval(timer)
+        }
+    }, 50);
 });
+
+async function x(res, serverName, terminalLen){
+    const path = GetServerPath(serverName) + "/terminal.txt";
+
+    // Get the last x amount of lines
+    fileContents = await fs.readFileSync(path);
+    fileContents = fileContents.toString().split("\n");
+
+    fileLen = fileContents.length;
+
+    fileContents = fileContents.slice(fileLen - LINELIMIT)
+    //fileContents = fileContents.join("\n");
+
+    if(fileLen != terminalLen){
+        res.json(fileContents);
+        
+    }
+
+}
+
+async function WaitForTerminal(terminalLen, serverName, req) {
+    const path = GetServerPath(serverName) + "/terminal.txt";
+
+        // Get the last x amount of lines
+        fileContents = await fs.readFileSync(path);
+        fileContents = fileContents.toString().split("\n");
+
+        let fileLen = fileContents.length;
+
+
+    return new Promise(async (resolve, reject) => {
+        while (fileLen == terminalLen && !req.closed) {
+    
+            // Get the last x amount of lines
+            fileContents = await fs.readFileSync(path);
+            fileContents = fileContents.toString().split("\n");
+    
+            fileLen = fileContents.length;
+    
+            fileContents = fileContents.slice(fileLen - LINELIMIT)
+            //fileContents = fileContents.join("\n");
+
+            await sleep(50)
+        }
+        
+        resolve(fileContents);
+    });
+}
 
 function GetServerFromID(serverID) {
     return new Promise((resolve, reject) => {
@@ -525,29 +603,14 @@ function GetServerFromID(serverID) {
             `SELECT * FROM servers WHERE ID = ${serverID}`,
             (error, results, _) => {
                 if (error != null) {
-                    modules.log(error);
-                    res.send(error);
+                    modules.Log(error);
                 }
 
-                resolve(results);
+                resolve(results[0]);
             }
         );
     });
 }
-
-async function GetServerTerminal(serverID) {
-    const server = await GetServerFromID(serverID);
-
-    // check if there are libraries in the server dir
-    // decide what commands are able to be run
-    //
-    // figure out how to run a process and get the live output (perhaps RCON)
-    // build control panel API requests
-    // send server terminal data live
-
-    return "no terminal avail";
-}
-
 app.get("/images/*", async (req, res) => {
     const splitPath = req.path.split("/");
     const picturePath = `${process.cwd()}/images/${

@@ -50,9 +50,28 @@ function ControlPanel() {
 }
 
 export default function PServerDashboard() {
+    const serverTerminalDOM = document.getElementById("server_terminal");
+
     const [serverData, setServerData] = useState("Loading data");
-    const [terminalData, setTerminalData] = useState("Loading terminal");
+    //const [terminalLines, setTerminalLines] = useState(0);
+    const [terminalData, setTerminalData] = useState("");
     const [controlPanelDOM, setControlPanelDOM] = useState(<ControlPanel />);
+
+    function LiveTerminal(terminalLines) {
+        fetch(
+            `${APIADDR}/api/get-server-terminal/${terminalLines}/${serverID}`,
+            {
+                credentials: "include",
+            }
+        ).then((response) => {
+            response.json().then((responseJSON) => {
+                setTerminalData(responseJSON[1].join("\n"));
+                //setTerminalLines(responseJSON[0]);
+
+                LiveTerminal(responseJSON[0]);
+            });
+        });
+    }
 
     useEffect(() => {
         fetch(`${APIADDR}/api/get-server-data/${serverID}`, {
@@ -62,19 +81,33 @@ export default function PServerDashboard() {
                 setServerData(responseText);
             });
         });
-
-        fetch(`${APIADDR}/api/get-server-terminal/${serverID}`, {
-            credentials: "include",
-        }).then((response) => {
-            response.text().then((responseText) => {
-                setTerminalData(responseText);
-            });
-        });
+        LiveTerminal(0);
     }, []);
 
     return (
         <div>
-            <div className="server_terminal">{terminalData}</div>
+            <div id="server_terminal" className="server_terminal">
+                {terminalData.split("\n").map((string) => {
+                    const x = terminalData.split("\n");
+
+                    if (terminalData == "") {
+                        return;
+                    }
+
+                    // When the last line is added scroll to bottom
+                    if (x.indexOf(string) == x.length - 1) {
+                        serverTerminalDOM.scrollTop =
+                            serverTerminalDOM.scrollHeight;
+                    }
+
+                    return (
+                        <>
+                            {string}
+                            <br />
+                        </>
+                    );
+                })}
+            </div>
             {serverData}
             <div className="control_panel">{controlPanelDOM}</div>
         </div>
