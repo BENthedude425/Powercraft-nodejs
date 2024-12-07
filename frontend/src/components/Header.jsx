@@ -5,10 +5,14 @@ import Cookies from "universal-cookie";
 export default function Header(props) { 
   return (
     <div className="dashboard-header">
-      <img src="../pictures/apple.png" href="/"/>
+      <img src="../pictures/apple.png" href="/" onClick={Home}/>
     
     </div>
   );
+}
+
+function Home(){
+  document.location.href = "/dashboard";
 }
 
 function LogOut(){

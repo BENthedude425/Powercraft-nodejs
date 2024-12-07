@@ -12,6 +12,8 @@ const fs = require("fs");
 
 const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
+const { exec } = require("child_process");
+const { resolve } = require("path");
 
 const PORT = 8080;
 var DATABASECONNECTION;
@@ -257,9 +259,21 @@ app.post("/api/create-user", async (req, res) => {
     ]);
 });
 
+// Returns path for a servers directory
 function GetServerPath(serverName) {
     const path = `${process.cwd()}/../servers/${serverName}`;
     return path;
+}
+
+function ChangeServerStatus(serverID, newStatus) {
+    DATABASECONNECTION.query(
+        `UPDATE servers SET server_status = "${newStatus}" WHERE ID = ${serverID}`,
+        (error) => {
+            if (error != null) {
+                modules.Log(FILEIDENT, error);
+            }
+        }
+    );
 }
 
 function CreateServerDir(serverName) {
@@ -276,15 +290,19 @@ function CreateServerDir(serverName) {
     return true;
 }
 
+function FormatLauncherType(launcherType) {}
+
 async function CreateServer(serverSettings, propertiesString) {
+    // DELETE
     let sources = await readFileSync("Output.json", { encoding: "utf8" });
     sources = JSON.parse(sources);
 
+    const serverID = serverSettings.ID;
     const serverName = serverSettings.server_name;
     const launcherType = serverSettings.launcherTypeSelect;
     const version = serverSettings.versionSelect;
 
-    let launcherFileName = ""
+    let launcherFileName = "";
     let link = sources[launcherType];
     link = link[version];
 
@@ -295,20 +313,15 @@ async function CreateServer(serverSettings, propertiesString) {
             const selectedLink = link[i];
             if (selectedLink.release == forgeRelease) {
                 link = selectedLink.link;
-                launcherFileName = `forge-${version}-${selectedLink.release}.jar`
+                launcherFileName = `forge-${version}-${selectedLink.release}.jar`;
                 break;
             }
         }
-    }else{
+    } else {
         const launcherFileName = link.file;
         link = link.link;
     }
 
-
-    console.log(launcherFileName)    
-    console.log(link)
-    
-    
     // Get all paths for files
     const path = GetServerPath(serverName);
     const propertiesPath = `${path}/server.properties`;
@@ -316,26 +329,35 @@ async function CreateServer(serverSettings, propertiesString) {
 
     // Create the server directory
     CreateServerDir(serverName);
+
     // Create the properties file
     await fs.writeFileSync(propertiesPath, propertiesString);
-    // download jar file
 
-    const fileContents = await DownloadFile(link);
-    var buffer = await fileContents.arrayBuffer();
-    buffer = Buffer.from( buffer)
-    fs.createWriteStream(launcherFilePath).write(buffer);
+    // Download jar file
+    await DownloadAndSaveFile(link, launcherFilePath);
 
-    //await fs.writeFileSync(launcherFilePath, fileContents);
+    // Update server status to installing
+    ChangeServerStatus(serverID, "Installing");
+    return launcherFileName;
 }
 
 async function DownloadFile(URL) {
     return await fetch(URL).then((res) => res.blob());
 }
 
-app.post("/api/create-server", async (req, res) => {
-    const [properties, serverSettings] = FormatServerData(req);
-    console.log(serverSettings.image_path);
-    const ID = await new Promise((resolve, reject) => {
+async function DownloadAndSaveFile(URL, downloadPath) {
+    modules.Log(FILEIDENT, `Downloading file from: ${URL}`);
+    const fileContents = await DownloadFile(URL);
+
+    var buffer = await fileContents.arrayBuffer();
+    buffer = Buffer.from(buffer);
+
+    fs.createWriteStream(downloadPath).write(buffer);
+    modules.Log(FILEIDENT, `File Downloaded`);
+}
+
+function GetUniqueServerID() {
+    return new Promise((resolve, reject) => {
         DATABASECONNECTION.query(
             `SELECT * FROM servers`,
             (error, results, _) => {
@@ -348,6 +370,13 @@ app.post("/api/create-server", async (req, res) => {
             }
         );
     });
+}
+
+app.post("/api/create-server", async (req, res) => {
+    const [properties, serverSettings] = FormatServerData(req);
+
+    // Get the next ID (needs improving to work with server deletion)
+    serverSettings.ID = await GetUniqueServerID();
 
     // if no image is attached use default one
     if (serverSettings.image_path != "default.png") {
@@ -359,7 +388,7 @@ app.post("/api/create-server", async (req, res) => {
 
     // Create entry in the table
     DATABASECONNECTION.query(
-        `INSERT INTO servers(id, server_name, server_directory, server_icon_path) VALUES (${ID}, "${serverSettings.server_name}", "${serverSettings.server_name}", "${serverSettings.image_path}")`,
+        `INSERT INTO servers(id, server_name, server_icon_path, server_status) VALUES (${serverSettings.ID}, "${serverSettings.server_name}", "${serverSettings.image_path}", "downloading")`,
         (error, results, fields) => {
             if (error != null) {
                 modules.Log(error);
@@ -367,7 +396,33 @@ app.post("/api/create-server", async (req, res) => {
         }
     );
 
-    CreateServer(serverSettings, properties);
+    // Create directory and download files and return path to the executable
+    const launcherFileName = await CreateServer(serverSettings, properties);
+
+    // Install server
+    // java -jar filename --installServer
+    modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Installing server");
+
+    const path = GetServerPath(serverSettings.server_name);
+    const command = `cd ${path} && java -jar ${launcherFileName} --installServer`;
+    
+    const installer_process = exec(command);
+
+    installer_process.stdout.on("data", (data) =>{
+        console.log(data)
+    })
+
+    installer_process.stderr.on("data", (data) =>{
+        console.log(data)
+    })
+
+    
+    installer_process.on("exit", (code) =>{
+        modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install complete");    
+        ChangeServerStatus(serverSettings.ID, "ready")
+    })
+
+    
 
     // add server to sql db
     // create a directory
@@ -436,6 +491,62 @@ app.get("/api/get-server-versions", async (req, res) => {
     contents = JSON.parse(contents);
     res.jsonp(contents);
 });
+
+app.get("/api/get-server-data/*", async (req, res) => {
+    const serverID = GetServerIDFromURL(req);
+    DATABASECONNECTION.query(
+        `SELECT * FROM servers WHERE ID = ${serverID}`,
+        (error, results, _) => {
+            if (error != null) {
+                modules.log(FILEIDENT, error);
+                res.send(error);
+                return;
+            }
+
+            res.send(results);
+        }
+    );
+});
+
+function GetServerIDFromURL(req) {
+    const serverID = req.path.split("/");
+    return serverID[serverID.length - 1];
+}
+
+app.get("/api/get-server-terminal*", async (req, res) => {
+    const serverID = GetServerIDFromURL(req);
+
+    res.send(GetServerTerminal(serverID));
+});
+
+function GetServerFromID(serverID) {
+    return new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(
+            `SELECT * FROM servers WHERE ID = ${serverID}`,
+            (error, results, _) => {
+                if (error != null) {
+                    modules.log(error);
+                    res.send(error);
+                }
+
+                resolve(results);
+            }
+        );
+    });
+}
+
+async function GetServerTerminal(serverID) {
+    const server = await GetServerFromID(serverID);
+
+    // check if there are libraries in the server dir
+    // decide what commands are able to be run
+    //
+    // figure out how to run a process and get the live output (perhaps RCON)
+    // build control panel API requests
+    // send server terminal data live
+
+    return "no terminal avail";
+}
 
 app.get("/images/*", async (req, res) => {
     const splitPath = req.path.split("/");
@@ -515,4 +626,7 @@ function GetCookie(req, cookieName) {
     return false;
 }
 
-//  URL STRUCT "/api/servers/'servername'/page"
+// Review if servers table is necessary or if any data needs to be added into any tables
+
+// BINGO BANGO BONGO, BISH BASH BOSH!
+// Author, BENthedude425.
