@@ -114,6 +114,54 @@
     height: 128px;
 }
 
+.server_terminal{
+    background-color: black;
+    color: white;
+    
+    width: 700px;
+    height: 400px;
+
+    overflow-y: scroll;
+}
+
+.control_panel{
+    background-color: grey;
+    padding: 1%;
+}
+
+.control_panel button{
+    width: 100px;
+    height: 50px;
+    padding: 5%;
+
+    font-size: 15px;
+    color: white;
+}
+
+.start_button{
+    background-color: green;
+}
+
+.restart_button{
+background-color: orange;
+}
+
+.stop_button{
+    background-color: red;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 @media screen and (max-width: 390px){
     .container_1{
         width: 100vw;

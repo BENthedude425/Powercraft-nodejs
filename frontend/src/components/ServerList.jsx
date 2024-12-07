@@ -6,19 +6,29 @@ import "../assets/main.css";
 
 function Server(props) {
     return (
-        <li className="server_listing">
+        <li className="server_listing"
+        onClick={() =>{Redirect(`server-dashboard/${props.serverID}`)}}>
             {props.serverName}
             <img src={props.serverImg} />
         </li>
     );
 }
 
-function Redirect(){
-    window.location = "/create-server";
+function Redirect(url) {
+    window.location = url;
 }
 
 function CreateServerButton() {
-    return <li className="create_server" onClick={Redirect}>Create server</li>;
+    return (
+        <li
+            className="create_server"
+            onClick={() => {
+                Redirect("/create-server");
+            }}
+        >
+            Create server
+        </li>
+    );
 }
 
 function ServerList() {
@@ -41,12 +51,11 @@ function ServerList() {
         <ul className="server_list" id="server_list">
             <CreateServerButton />
             {serverlistings.map((data) => {
-                const serverID = data.server_ID;
+                const serverID = data.ID;
                 const serverName = data.server_name;
-                const serverDirectory = data.server_directory;
                 const serverIMG = `${APIADDR}/images/${data.server_icon_path}`;
 
-                return <Server serverName={serverName} serverImg={serverIMG} />;
+                return <Server serverName={serverName} serverImg={serverIMG} serverID={serverID} />;
             })}
         </ul>
     );
