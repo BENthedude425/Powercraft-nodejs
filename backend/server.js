@@ -1,4 +1,4 @@
-const express = require("express");
+ express = require("express");
 const cors = require("cors");
 const mysql2 = require("mysql2");
 const app = express();
@@ -28,6 +28,9 @@ const FILEIDENT = "server.js";
 //const FIXEDIPADDRESS = 'http://newhost425.ddns.net:81'
 //const FIXEDIPADDRESS = "http://localhost";
 const FIXEDIPADDRESS = "http://192.168.0.62";
+
+// An object containing all of the running server processes
+const SERVERPROCESSES = {}
 
 async function InitialiseDB() {
     await LoadConfigs();
@@ -162,8 +165,148 @@ app.use(cors({ credentials: true, origin: FIXEDIPADDRESS }));
 app.use(express.static("public"));
 app.use(fileUpload());
 
-// API ACTIONS
+// Returns path for a servers directory
+function GetServerPath(serverName) {
+    const path = `${process.cwd()}/../servers/${serverName}`;
+    return path;
+}
 
+function GetServerFromID(serverID) {
+    return new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(
+            `SELECT * FROM servers WHERE ID = ${serverID}`,
+            (error, results, _) => {
+                if (error != null) {
+                    modules.Log(error);
+                }
+
+                resolve(results[0]);
+            }
+        );
+    });
+}
+
+function GetUniqueServerID() {
+    return new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(
+            `SELECT * FROM servers`,
+            (error, results, _) => {
+                if (error != null) {
+                    modules.Log(error);
+                    return;
+                }
+
+                resolve(results.length);
+            }
+        );
+    });
+}
+
+function GetServerIDFromURL(req) {
+    const serverID = req.path.split("/");
+    return serverID[serverID.length - 1];
+}
+
+function ChangeServerStatus(serverID, newStatus) {
+    DATABASECONNECTION.query(
+        `UPDATE servers SET server_status = "${newStatus}" WHERE ID = ${serverID}`,
+        (error) => {
+            if (error != null) {
+                modules.Log(FILEIDENT, error);
+            }
+        }
+    );
+}
+
+function CreateServerDir(serverName) {
+    const serversDir = GetServerPath("");
+    const serverPath = GetServerPath(serverName);
+
+    if (!fs.existsSync(serversDir)) {
+        fs.mkdirSync(serversDir);
+    }
+
+    fs.mkdirSync(serverPath);
+    modules.Log(FILEIDENT, "Servers directory created.");
+    CreateServerDir;
+    return true;
+}
+
+async function CreateServer(serverSettings, propertiesString) {
+    // DELETE
+    let sources = await readFileSync("Output.json", { encoding: "utf8" });
+    sources = JSON.parse(sources);
+
+    const serverID = serverSettings.ID;
+    const serverName = serverSettings.server_name;
+    const launcherType = serverSettings.launcherTypeSelect;
+    const version = serverSettings.versionSelect;
+
+    let launcherFileName = "";
+    let link = sources[launcherType];
+    link = link[version];
+
+    if (launcherType == "Forge") {
+        const forgeRelease = serverSettings.forgeReleaseSelect;
+
+        for (let i = 0; i < link.length; i++) {
+            const selectedLink = link[i];
+            if (selectedLink.release == forgeRelease) {
+                link = selectedLink.link;
+                launcherFileName = `forge-${version}-${selectedLink.release}.jar`;
+                break;
+            }
+        }
+    } else {
+        console.log(link)
+        launcherFileName = `${link.file}.jar`;
+        link = link.link;
+    }
+
+    // Get all paths for files
+    const path = GetServerPath(serverName);
+    const propertiesPath = `${path}/server.properties`;
+    const terminalPath = `${path}/terminal.txt`;
+    const eulaPath = `${path}/eula.txt`;
+    const launcherFilePath = `${path}/${launcherFileName}`;
+
+    // Create the server directory\
+    CreateServerDir(serverName);
+
+    // Create the properties file
+    await fs.writeFileSync(propertiesPath, propertiesString);
+
+    // Create the terminal log file
+    await fs.writeFileSync(terminalPath, "");
+
+    // Agree to the eula
+    await fs.writeFileSync(eulaPath, "eula=true");
+
+    // Download jar file
+    await DownloadAndSaveFile(link, launcherFilePath);
+
+    // Update server status to installing
+    ChangeServerStatus(serverID, "Installing");
+    return launcherFileName;
+}
+
+async function DownloadFile(URL) {
+    return await fetch(URL).then((res) => res.blob());
+}
+
+async function DownloadAndSaveFile(URL, downloadPath) {
+    modules.Log(FILEIDENT, `Downloading file from: ${URL}`);
+    const fileContents = await DownloadFile(URL);
+
+    var buffer = await fileContents.arrayBuffer();
+    buffer = Buffer.from(buffer);
+
+    fs.createWriteStream(downloadPath).write(buffer);
+    modules.Log(FILEIDENT, `File Downloaded`);
+}
+
+
+// API ACTIONS
 app.post("/api/create-user", async (req, res) => {
     const credentials = {
         username: "",
@@ -261,122 +404,6 @@ app.post("/api/create-user", async (req, res) => {
     ]);
 });
 
-// Returns path for a servers directory
-function GetServerPath(serverName) {
-    const path = `${process.cwd()}/../servers/${serverName}`;
-    return path;
-}
-
-function ChangeServerStatus(serverID, newStatus) {
-    DATABASECONNECTION.query(
-        `UPDATE servers SET server_status = "${newStatus}" WHERE ID = ${serverID}`,
-        (error) => {
-            if (error != null) {
-                modules.Log(FILEIDENT, error);
-            }
-        }
-    );
-}
-
-function CreateServerDir(serverName) {
-    const serversDir = GetServerPath("");
-    const serverPath = GetServerPath(serverName);
-
-    if (!fs.existsSync(serversDir)) {
-        fs.mkdirSync(serversDir);
-    }
-
-    fs.mkdirSync(serverPath);
-    modules.Log(FILEIDENT, "Servers directory created.");
-    CreateServerDir;
-    return true;
-}
-
-function FormatLauncherType(launcherType) {}
-
-async function CreateServer(serverSettings, propertiesString) {
-    // DELETE
-    let sources = await readFileSync("Output.json", { encoding: "utf8" });
-    sources = JSON.parse(sources);
-
-    const serverID = serverSettings.ID;
-    const serverName = serverSettings.server_name;
-    const launcherType = serverSettings.launcherTypeSelect;
-    const version = serverSettings.versionSelect;
-
-    let launcherFileName = "";
-    let link = sources[launcherType];
-    link = link[version];
-
-    if (launcherType == "Forge") {
-        const forgeRelease = serverSettings.forgeReleaseSelect;
-
-        for (let i = 0; i < link.length; i++) {
-            const selectedLink = link[i];
-            if (selectedLink.release == forgeRelease) {
-                link = selectedLink.link;
-                launcherFileName = `forge-${version}-${selectedLink.release}.jar`;
-                break;
-            }
-        }
-    } else {
-        const launcherFileName = link.file;
-        link = link.link;
-    }
-
-    // Get all paths for files
-    const path = GetServerPath(serverName);
-    const propertiesPath = `${path}/server.properties`;
-    const terminalPath = `${path}/terminal.txt`;
-    const launcherFilePath = `${path}/${launcherFileName}`;
-
-    // Create the server directory
-    CreateServerDir(serverName);
-
-    // Create the properties file
-    await fs.writeFileSync(propertiesPath, propertiesString);
-
-    // Create the terminal log file
-    await fs.writeFileSync(terminalPath, "");
-
-    // Download jar file
-    await DownloadAndSaveFile(link, launcherFilePath);
-
-    // Update server status to installing
-    ChangeServerStatus(serverID, "Installing");
-    return launcherFileName;
-}
-
-async function DownloadFile(URL) {
-    return await fetch(URL).then((res) => res.blob());
-}
-
-async function DownloadAndSaveFile(URL, downloadPath) {
-    modules.Log(FILEIDENT, `Downloading file from: ${URL}`);
-    const fileContents = await DownloadFile(URL);
-
-    var buffer = await fileContents.arrayBuffer();
-    buffer = Buffer.from(buffer);
-
-    fs.createWriteStream(downloadPath).write(buffer);
-    modules.Log(FILEIDENT, `File Downloaded`);
-}
-
-function GetUniqueServerID() {
-    return new Promise((resolve, reject) => {
-        DATABASECONNECTION.query(
-            `SELECT * FROM servers`,
-            (error, results, _) => {
-                if (error != null) {
-                    modules.Log(error);
-                    return;
-                }
-
-                resolve(results.length);
-            }
-        );
-    });
-}
 
 app.post("/api/create-server", async (req, res) => {
     const [properties, serverSettings] = FormatServerData(req);
@@ -392,9 +419,19 @@ app.post("/api/create-server", async (req, res) => {
         );
     }
 
+
+    // Create directory and download files and return path to the executable
+    const launcherFileName = await CreateServer(serverSettings, properties);
+
+    // Install server
+    // java -jar filename --installServer
+    modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Installing server");
+
+    const serverPath = GetServerPath(serverSettings.server_name);
+
     // Create entry in the table
     DATABASECONNECTION.query(
-        `INSERT INTO servers(id, server_name, server_icon_path, server_status) VALUES (${serverSettings.ID}, "${serverSettings.server_name}", "${serverSettings.image_path}", "downloading")`,
+        `INSERT INTO servers(id, server_name, server_icon_path, server_executable_path, server_launcher_type, server_version, forge_release, server_status) VALUES (${serverSettings.ID}, "${serverSettings.server_name}", "${serverSettings.image_path}", "${serverPath}/${launcherFileName}", "${serverSettings.launcherTypeSelect}", "${serverSettings.versionSelect}", "${serverSettings.forgeReleaseSelect}", "downloading")`,
         (error, results, fields) => {
             if (error != null) {
                 modules.Log(error);
@@ -402,38 +439,27 @@ app.post("/api/create-server", async (req, res) => {
         }
     );
 
-    // Create directory and download files and return path to the executable
-    const launcherFileName = await CreateServer(serverSettings, properties);
+    if(serverSettings.launcherType == "Forge"){
+        const terminalLogPath = `${serverPath}/terminal.txt`;
+        const command = `cd ${serverPath} && java -jar ${launcherFileName} --installServer`;
+        const installer_process = exec(command);
+    
+        installer_process.stdout.on("data", (data) => {
+            fs.appendFileSync(terminalLogPath, data);
+        });
+    
+        installer_process.stderr.on("data", (data) => {
+            fs.appendFileSync(terminalLogPath, data);
+        });
+    
+        installer_process.on("exit", (code) => {
+            modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install complete");
+            fs.appendFileSync(terminalLogPath, `Install complete! \n`);
+            ChangeServerStatus(serverSettings.ID, "ready");
+        });
+    }
 
     res.redirect(`${FIXEDIPADDRESS}/dashboard`);
-
-    // Install server
-    // java -jar filename --installServer
-    modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Installing server");
-
-    const serverPath = GetServerPath(serverSettings.server_name);
-    const terminalLogPath = `${serverPath}/terminal.txt`;
-    const command = `cd ${serverPath} && java -jar ${launcherFileName} --installServer`;
-    const installer_process = exec(command);
-
-    installer_process.stdout.on("data", (data) => {
-        fs.appendFileSync(terminalLogPath, data);
-    });
-
-    installer_process.stderr.on("data", (data) => {
-        fs.appendFileSync(terminalLogPath, data);
-    });
-
-    installer_process.on("exit", (code) => {
-        modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install complete");
-        fs.appendFileSync(terminalLogPath, `Install complete! \n`);
-        ChangeServerStatus(serverSettings.ID, "ready");
-    });
-
-    // add server to sql db
-    // create a directory
-    // create properties file
-    // download jar file
 });
 
 app.post("/api/login", async (req, res) => {
@@ -512,11 +538,6 @@ app.get("/api/get-server-data/*", async (req, res) => {
     );
 });
 
-function GetServerIDFromURL(req) {
-    const serverID = req.path.split("/");
-    return serverID[serverID.length - 1];
-}
-
 app.get("/api/get-server-terminal*", async (req, res) => {
     const LINELIMIT = 250;
 
@@ -541,7 +562,7 @@ app.get("/api/get-server-terminal*", async (req, res) => {
         //fileContents = fileContents.join("\n");
         
 
-        console.log(fileLen , terminalLen, fileLen != terminalLen, res.closed)
+        //console.log(fileLen , terminalLen, fileLen != terminalLen, res.closed)
         if(fileLen != terminalLen || res.closed){
             res.json([fileLen, fileContents]);
             clearInterval(timer)
@@ -549,80 +570,45 @@ app.get("/api/get-server-terminal*", async (req, res) => {
     }, 50);
 });
 
-async function x(res, serverName, terminalLen){
-    const path = GetServerPath(serverName) + "/terminal.txt";
+app.get("/api/set-server-control*", async(req, res)=>{
+    const serverID = GetServerIDFromURL(req);
+    const action = req.path.split("/")[req.path.split("/").length - 2]
+    const server = await GetServerFromID(serverID)
+    const serverPath = GetServerPath(server.server_name)
 
-    // Get the last x amount of lines
-    fileContents = await fs.readFileSync(path);
-    fileContents = fileContents.toString().split("\n");
+    switch(action){
+        case "start":
+            // get the file name automatically
+            const command = `cd ${serverPath} && java -jar minecraft_server-1.20.4.jar`
+            var serverProcess = exec(command)
 
-    fileLen = fileContents.length;
+            serverProcess.stdout.on("data", (data) =>{
+                fs.appendFileSync(`${serverPath}/terminal.txt`, data)
+            })
 
-    fileContents = fileContents.slice(fileLen - LINELIMIT)
-    //fileContents = fileContents.join("\n");
+            serverProcess.stderr.on("data", (data) =>{
+                fs.appendFileSync(`${serverPath}/terminal.txt`, data)
+            })
 
-    if(fileLen != terminalLen){
-        res.json(fileContents);
-        
+            serverProcess.on("exit", (code) =>{
+                fs.appendFileSync(`${serverPath}/terminal.txt`, `The server has closed with code: ${code}\n`)
+            })
+
+            serverProcess.stdin.write("op BENthedude425\n")
+
+            SERVERPROCESSES[serverID] = serverProcess
+            res.send("Starting server")
+            break;
+        case "stop":
+            console.log(SERVERPROCESSES[serverID])
+            var serverProcess = SERVERPROCESSES[serverID]
+            serverProcess.stdin.write("stop\n")
+            res.send("Stopping server")
+            break;
     }
 
-}
+})
 
-async function WaitForTerminal(terminalLen, serverName, req) {
-    const path = GetServerPath(serverName) + "/terminal.txt";
-
-        // Get the last x amount of lines
-        fileContents = await fs.readFileSync(path);
-        fileContents = fileContents.toString().split("\n");
-
-        let fileLen = fileContents.length;
-
-
-    return new Promise(async (resolve, reject) => {
-        while (fileLen == terminalLen && !req.closed) {
-    
-            // Get the last x amount of lines
-            fileContents = await fs.readFileSync(path);
-            fileContents = fileContents.toString().split("\n");
-    
-            fileLen = fileContents.length;
-    
-            fileContents = fileContents.slice(fileLen - LINELIMIT)
-            //fileContents = fileContents.join("\n");
-
-            await sleep(50)
-        }
-        
-        resolve(fileContents);
-    });
-}
-
-function GetServerFromID(serverID) {
-    return new Promise((resolve, reject) => {
-        DATABASECONNECTION.query(
-            `SELECT * FROM servers WHERE ID = ${serverID}`,
-            (error, results, _) => {
-                if (error != null) {
-                    modules.Log(error);
-                }
-
-                resolve(results[0]);
-            }
-        );
-    });
-}
-app.get("/images/*", async (req, res) => {
-    const splitPath = req.path.split("/");
-    const picturePath = `${process.cwd()}/images/${
-        splitPath[splitPath.length - 1]
-    }`;
-
-    res.sendFile(picturePath, (error) => {
-        if (error) {
-            modules.Log(FILEIDENT, error);
-        }
-    });
-});
 
 // Get Data from database
 
@@ -653,6 +639,19 @@ app.get("/createnewrootuser", async (req, res) => {
         }
 
         res.send("Created user");
+    });
+});
+
+app.get("/images/*", async (req, res) => {
+    const splitPath = req.path.split("/");
+    const picturePath = `${process.cwd()}/images/${
+        splitPath[splitPath.length - 1]
+    }`;
+
+    res.sendFile(picturePath, (error) => {
+        if (error) {
+            modules.Log(FILEIDENT, error);
+        }
     });
 });
 

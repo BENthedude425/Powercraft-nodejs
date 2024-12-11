@@ -18,3 +18,12 @@
     width: 500px;
     box-sizing: border-box;
 }
+
+.wrapper2{
+    font-size: 25px;
+    display: inline;
+    border: 1px solid red;
+    padding: 2%;
+    width: 500px;
+    box-sizing: border-box;
+}

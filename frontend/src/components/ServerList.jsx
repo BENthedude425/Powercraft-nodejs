@@ -54,8 +54,8 @@ function ServerList() {
                 const serverID = data.ID;
                 const serverName = data.server_name;
                 const serverIMG = `${APIADDR}/images/${data.server_icon_path}`;
-
-                return <Server serverName={serverName} serverImg={serverIMG} serverID={serverID} />;
+                
+                return <Server key={serverID} serverName={serverName} serverImg={serverIMG} serverID={serverID} />;
             })}
         </ul>
     );

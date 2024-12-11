@@ -67,7 +67,7 @@ export default function PCreateServer() {
     return (
         <div>
             <Header />
-            <form action={`${APIADDR}/api/create-server`} method="POST" enctype="multipart/form-data">
+            <form action={`${APIADDR}/api/create-server`} method="POST" encType="multipart/form-data">
                 <input
                     type="text"
                     name="server_name"
@@ -87,7 +87,7 @@ export default function PCreateServer() {
                     onChange={handleLauncherChange}
                 >
                     {Object.keys(serverVersionsData).map((launcherType) => {
-                        return <option>{launcherType}</option>;
+                        return <option key={launcherType}>{launcherType}</option>;
                     })}
                 </select>
 
@@ -97,7 +97,7 @@ export default function PCreateServer() {
                     onChange={handleVersionChange}
                 >
                     {launcherVersions.map((version) => {
-                        return <option>{version}</option>;
+                        return <option key={version}>{version}</option>;
                     })}
                 </select>
 
@@ -107,7 +107,7 @@ export default function PCreateServer() {
                     style={{ visibility: "Hidden" }}
                 >
                     {forgeReleases.map((release) => {
-                        return <option>{release.release}</option>;
+                        return <option key={release}>{release.release}</option>;
                     })}
                 </select>
 
@@ -117,7 +117,7 @@ export default function PCreateServer() {
                         const options = data[key];
 
                         return (
-                            <ServerProperty setting={key} options={options} />
+                            <ServerProperty key={key} setting={key} options={options} />
                         );
                     })}
                 </div>
