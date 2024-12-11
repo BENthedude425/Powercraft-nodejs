@@ -7,7 +7,8 @@ const MINECRAFTPROPERTIES = [
   { gamemode: ['survival', 'creative', 'adventure'] },
   { 'enable-command-block': [false, true] },
   { 'enable-query': [false, true] },
-  { 'generator-settings': [{}] },
+  // Decide if this is necessary
+  //{ 'generator-settings': [{}] },
   { 'enforce-secure-profiles': [true, false] },
   { 'level-name': 'world' },
   { motd: 'A powercraft hosted server!' },

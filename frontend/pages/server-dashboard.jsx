@@ -10,8 +10,10 @@ function SendControl(action) {
     fetch(`${APIADDR}/api/set-server-control/${action}/${serverID}`, {
         credentials: "include",
     }).then((response) => {
-        response.text().then((responseText) => {
-            alert(responseText);
+        response.json().then((responseJSON) => {
+            if(!responseJSON[0]){
+                alert(responseJSON);
+            }
         });
     });
 }
@@ -84,27 +86,36 @@ export default function PServerDashboard() {
         LiveTerminal(0);
     }, []);
 
+    useEffect(() =>{
+        if(serverTerminalDOM != null){
+            serverTerminalDOM.scrollTop = serverTerminalDOM.scrollHeight;   
+        }
+        
+    }, )
+
+    // Create a 'unique key' to keep react happy and smiling. 
+    // React can really get on my nerves...
+
+    let keyID = 0
+
     return (
         <div>
             <div id="server_terminal" className="server_terminal">
                 {terminalData.split("\n").map((string) => {
-                    const x = terminalData.split("\n");
+                    const lines = terminalData.split("\n");
+                    const index = lines.indexOf(string);
 
                     if (terminalData == "") {
                         return;
                     }
 
-                    // When the last line is added scroll to bottom
-                    if (x.indexOf(string) == x.length - 1) {
-                        serverTerminalDOM.scrollTop =
-                            serverTerminalDOM.scrollHeight;
-                    }
-
+                    keyID ++
                     return (
-                        <>
+                        
+                        <code key={keyID}>
                             {string}
                             <br />
-                        </>
+                            </code>
                     );
                 })}
             </div>
