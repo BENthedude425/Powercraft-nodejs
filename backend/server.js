@@ -258,7 +258,6 @@ async function CreateServer(serverSettings, propertiesString) {
             }
         }
     } else {
-        console.log(link)
         launcherFileName = `${link.file}.jar`;
         link = link.link;
     }
@@ -457,6 +456,8 @@ app.post("/api/create-server", async (req, res) => {
             fs.appendFileSync(terminalLogPath, `Install complete! \n`);
             ChangeServerStatus(serverSettings.ID, "ready");
         });
+    }else{
+        ChangeServerStatus(serverID, "ready")
     }
 
     res.redirect(`${FIXEDIPADDRESS}/dashboard`);
@@ -576,8 +577,23 @@ app.get("/api/set-server-control*", async(req, res)=>{
     const server = await GetServerFromID(serverID)
     const serverPath = GetServerPath(server.server_name)
 
+    // Check the process is retrievable
+    if(action != "start"){
+        try{
+            const process = SERVERPROCESSES[serverID]
+            if(process == null){
+                res.json(["failed", `Could not find the server process. More advanced response needs to be put in place here though, lol`])
+                return
+            }
+        }catch(error){
+            res.json("failed", error)
+            return
+        }
+    }
+
     switch(action){
         case "start":
+            ChangeServerStatus(serverID, "running")
             // get the file name automatically
             const command = `cd ${serverPath} && java -jar minecraft_server-1.20.4.jar`
             var serverProcess = exec(command)
@@ -592,21 +608,21 @@ app.get("/api/set-server-control*", async(req, res)=>{
 
             serverProcess.on("exit", (code) =>{
                 fs.appendFileSync(`${serverPath}/terminal.txt`, `The server has closed with code: ${code}\n`)
+                // Remove the process from the object
+                SERVERPROCESSES[serverID] = null;
             })
 
-            serverProcess.stdin.write("op BENthedude425\n")
-
             SERVERPROCESSES[serverID] = serverProcess
-            res.send("Starting server")
             break;
         case "stop":
+            ChangeServerStatus(serverID, "stopped")
             console.log(SERVERPROCESSES[serverID])
             var serverProcess = SERVERPROCESSES[serverID]
             serverProcess.stdin.write("stop\n")
-            res.send("Stopping server")
             break;
     }
 
+    res.json("success")
 })
 
 
