@@ -7,7 +7,7 @@ let serverID = window.location.href.split("/");
 serverID = serverID[serverID.length - 1];
 
 function SendControl(action) {
-    fetch(`${APIADDR}/api/set-server-control/${serverID}/${action}`, {
+    fetch(`${APIADDR}/api/set-server-control/${action}/${serverID}`, {
         credentials: "include",
     }).then((response) => {
         response.text().then((responseText) => {

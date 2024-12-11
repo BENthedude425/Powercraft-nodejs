@@ -23,23 +23,26 @@ export default function ServerProperty(props) {
     if (type == "selection") {
         return (
             <div className="wrapper">
-            {setting}
-            <select className="item" name={`property:${setting}`}>
-                {options.map((data) => {
-                    return (
-                        <option>{String(data)}</option>
-                    );
-                })}
-            </select>
+                {setting}
+                <select className="item" name={`property:${setting}`}>
+                    {options.map((data) => {
+                        return <option key={data}>{String(data)}</option>;
+                    })}
+                </select>
             </div>
         );
     } else {
         return (
-            <div className="wrapper">
+            <div className="wrapper2">
                 {setting}
-                <input className="item" name={`property:${setting}`} type={type} placeholder={options} value={options}/>
+                <input
+                    className="item"
+                    name={`property:${setting}`}
+                    type={type}
+                    placeholder={options}
+                    defaultValue={options}
+                />
             </div>
-            
         );
     }
 }
