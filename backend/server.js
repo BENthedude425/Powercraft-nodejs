@@ -1,9 +1,9 @@
- express = require("express");
+express = require("express");
 const cors = require("cors");
 const mysql2 = require("mysql2");
 const app = express();
 
-const sleep = require('system-sleep')
+const sleep = require("system-sleep");
 
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
@@ -30,7 +30,7 @@ const FILEIDENT = "server.js";
 const FIXEDIPADDRESS = "http://192.168.0.62";
 
 // An object containing all of the running server processes
-const SERVERPROCESSES = {}
+const SERVERPROCESSES = {};
 
 async function InitialiseDB() {
     await LoadConfigs();
@@ -304,7 +304,6 @@ async function DownloadAndSaveFile(URL, downloadPath) {
     modules.Log(FILEIDENT, `File Downloaded`);
 }
 
-
 // API ACTIONS
 app.post("/api/create-user", async (req, res) => {
     const credentials = {
@@ -403,7 +402,6 @@ app.post("/api/create-user", async (req, res) => {
     ]);
 });
 
-
 app.post("/api/create-server", async (req, res) => {
     const [properties, serverSettings] = FormatServerData(req);
 
@@ -417,7 +415,6 @@ app.post("/api/create-server", async (req, res) => {
             req.files.server_img.data
         );
     }
-
 
     // Create directory and download files and return path to the executable
     const launcherFileName = await CreateServer(serverSettings, properties);
@@ -438,26 +435,26 @@ app.post("/api/create-server", async (req, res) => {
         }
     );
 
-    if(serverSettings.launcherType == "Forge"){
+    if (serverSettings.launcherType == "Forge") {
         const terminalLogPath = `${serverPath}/terminal.txt`;
         const command = `cd ${serverPath} && java -jar ${launcherFileName} --installServer`;
         const installer_process = exec(command);
-    
+
         installer_process.stdout.on("data", (data) => {
             fs.appendFileSync(terminalLogPath, data);
         });
-    
+
         installer_process.stderr.on("data", (data) => {
             fs.appendFileSync(terminalLogPath, data);
         });
-    
+
         installer_process.on("exit", (code) => {
             modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install complete");
             fs.appendFileSync(terminalLogPath, `Install complete! \n`);
             ChangeServerStatus(serverSettings.ID, "ready");
         });
-    }else{
-        ChangeServerStatus(serverID, "ready")
+    } else {
+        ChangeServerStatus(serverSettings.ID, "ready");
     }
 
     res.redirect(`${FIXEDIPADDRESS}/dashboard`);
@@ -503,6 +500,15 @@ app.get("/api/authenticate/*", async (req, res) => {
 });
 
 app.get("/api/get-server/*", async (req, res) => {
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
+
     const splitPath = req.path.split("/");
     const serverName = splitPath[splitPath.length - 1];
 
@@ -514,16 +520,43 @@ app.get("/api/get-server/*", async (req, res) => {
 });
 
 app.get("/api/get-server-properties", async (req, res) => {
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
+
     res.jsonp(modules.GetServerProperties());
 });
 
 app.get("/api/get-server-versions", async (req, res) => {
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
+
     let contents = await readFileSync("Output.json", { encoding: "utf8" }); // Change to get the data from an endpoint
     contents = JSON.parse(contents);
     res.jsonp(contents);
 });
 
 app.get("/api/get-server-data/*", async (req, res) => {
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
+
     const serverID = GetServerIDFromURL(req);
     DATABASECONNECTION.query(
         `SELECT * FROM servers WHERE ID = ${serverID}`,
@@ -540,9 +573,16 @@ app.get("/api/get-server-data/*", async (req, res) => {
 });
 
 app.get("/api/get-server-terminal*", async (req, res) => {
-    const LINELIMIT = 250;
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
 
-    console.log(req.path)
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
+
+    const LINELIMIT = 250;
 
     let url = req.path.split("/");
     const serverID = url[url.length - 1];
@@ -552,79 +592,125 @@ app.get("/api/get-server-terminal*", async (req, res) => {
     //terminalData = await WaitForTerminal(terminalLen, server.server_name, req);
 
     var timer = setInterval(() => {
-
         // Get the last x amount of lines
         fileContents = fs.readFileSync(path);
         fileContents = fileContents.toString().split("\n");
-    
+
         fileLen = fileContents.length;
-    
-        fileContents = fileContents.slice(fileLen - LINELIMIT)
+
+        fileContents = fileContents.slice(fileLen - LINELIMIT);
         //fileContents = fileContents.join("\n");
-        
 
         //console.log(fileLen , terminalLen, fileLen != terminalLen, res.closed)
-        if(fileLen != terminalLen || res.closed){
+        if (fileLen != terminalLen || res.closed) {
             res.json([fileLen, fileContents]);
-            clearInterval(timer)
+            clearInterval(timer);
         }
     }, 50);
 });
 
-app.get("/api/set-server-control*", async(req, res)=>{
+app.get("/api/set-server-control*", async (req, res) => {
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
+
     const serverID = GetServerIDFromURL(req);
-    const action = req.path.split("/")[req.path.split("/").length - 2]
-    const server = await GetServerFromID(serverID)
-    const serverPath = GetServerPath(server.server_name)
+    const action = req.path.split("/")[req.path.split("/").length - 2];
+    const server = await GetServerFromID(serverID);
+    const serverPath = GetServerPath(server.server_name);
 
     // Check the process is retrievable
-    if(action != "start"){
-        try{
-            const process = SERVERPROCESSES[serverID]
-            if(process == null){
-                res.json(["failed", `Could not find the server process. More advanced response needs to be put in place here though, lol`])
-                return
+    if (action != "start") {
+        try {
+            const process = SERVERPROCESSES[serverID];
+            if (process == null) {
+                res.json([
+                    ["failed",
+                    `Could not find the server process. More advanced response needs to be put in place here though, lol`,]
+                ]);
+                return;
             }
-        }catch(error){
-            res.json("failed", error)
-            return
+        } catch (error) {
+            res.json(["failed", error]);
+            return;
         }
     }
 
-    switch(action){
+    switch (action) {
         case "start":
-            ChangeServerStatus(serverID, "running")
+            ChangeServerStatus(serverID, "running");
             // get the file name automatically
-            const command = `cd ${serverPath} && java -jar minecraft_server-1.20.4.jar`
-            var serverProcess = exec(command)
+            const command = `cd ${serverPath} && java -jar Spigot-1.20.4.jar`;
+            var serverProcess = exec(command);
 
-            serverProcess.stdout.on("data", (data) =>{
-                fs.appendFileSync(`${serverPath}/terminal.txt`, data)
-            })
+            serverProcess.stdout.on("data", (data) => {
+                fs.appendFileSync(`${serverPath}/terminal.txt`, data);
+            });
 
-            serverProcess.stderr.on("data", (data) =>{
-                fs.appendFileSync(`${serverPath}/terminal.txt`, data)
-            })
+            serverProcess.stderr.on("data", (data) => {
+                fs.appendFileSync(`${serverPath}/terminal.txt`, data);
+            });
 
-            serverProcess.on("exit", (code) =>{
-                fs.appendFileSync(`${serverPath}/terminal.txt`, `The server has closed with code: ${code}\n`)
+            serverProcess.on("exit", (code) => {
+                fs.appendFileSync(
+                    `${serverPath}/terminal.txt`,
+                    `The server has closed with code: ${code}\n`
+                );
                 // Remove the process from the object
                 SERVERPROCESSES[serverID] = null;
-            })
+            });
 
-            SERVERPROCESSES[serverID] = serverProcess
+            SERVERPROCESSES[serverID] = serverProcess;
             break;
         case "stop":
-            ChangeServerStatus(serverID, "stopped")
-            console.log(SERVERPROCESSES[serverID])
-            var serverProcess = SERVERPROCESSES[serverID]
-            serverProcess.stdin.write("stop\n")
+            ChangeServerStatus(serverID, "stopped");
+
+            var serverProcess = SERVERPROCESSES[serverID];
+            serverProcess.stdin.write("stop\n");
             break;
     }
 
-    res.json("success")
-})
+    res.json(["success"]);
+});
 
+app.get("/api/input-server-terminal*", async (req, res) => {
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
+
+    const splitPath = req.path.split("/");
+    const serverID = splitPath[splitPath.length - 1];
+    const input = splitPath[splitPath.length - 2].split("%20").join(" ");
+
+    try {
+        const process = SERVERPROCESSES[serverID];
+
+        if (process == null) {
+            res.json([
+                "failed",
+                "Could not find the server process to exec this command",
+            ]);
+            return
+        }
+
+        process.stdin.write(`${input}\n`);
+    } catch (error) {
+        res.json(["failed", error]);
+        return;
+    }
+
+    res.json(["success"]);
+});
 
 // Get Data from database
 
