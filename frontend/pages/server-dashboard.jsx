@@ -7,11 +7,30 @@ let serverID = window.location.href.split("/");
 serverID = serverID[serverID.length - 1];
 
 function SendControl(action) {
+    const terminalInputDOM = document.getElementById("server-terminal-input");
+    const input = terminalInputDOM.value;
+
+    if (action == "input") {
+        fetch(`${APIADDR}/api/input-server-terminal/${input}/${serverID}`, {
+            credentials: "include",
+        }).then((response) => {
+            response.json().then(
+                (responseJSON) => {
+                if (responseJSON[0] != "success") {
+                    alert(responseJSON);
+                    return
+                }
+                terminalInputDOM.value = "";
+            });
+        });
+        return;
+    }
+
     fetch(`${APIADDR}/api/set-server-control/${action}/${serverID}`, {
         credentials: "include",
     }).then((response) => {
         response.json().then((responseJSON) => {
-            if(!responseJSON[0]){
+            if (responseJSON[0] != "success") {
                 alert(responseJSON);
             }
         });
@@ -86,41 +105,60 @@ export default function PServerDashboard() {
         LiveTerminal(0);
     }, []);
 
-    useEffect(() =>{
-        if(serverTerminalDOM != null){
-            serverTerminalDOM.scrollTop = serverTerminalDOM.scrollHeight;   
+    useEffect(() => {
+        if (serverTerminalDOM != null) {
+            serverTerminalDOM.scrollTop = serverTerminalDOM.scrollHeight;
         }
-        
-    }, )
+    });
 
-    // Create a 'unique key' to keep react happy and smiling. 
+    // Create a 'unique key' to keep react happy and smiling.
     // React can really get on my nerves...
 
-    let keyID = 0
+    let keyID = 0;
 
     return (
         <div>
             <div id="server_terminal" className="server_terminal">
                 {terminalData.split("\n").map((string) => {
-                    const lines = terminalData.split("\n");
-                    const index = lines.indexOf(string);
-
-                    if (terminalData == "") {
-                        return;
-                    }
-
-                    keyID ++
+                    keyID++;
                     return (
-                        
-                        <code key={keyID}>
-                            {string}
-                            <br />
-                            </code>
+                        <TerminalText
+                            terminalData={terminalData}
+                            string={string}
+                            key={keyID}
+                        />
                     );
                 })}
             </div>
+
+            <input
+                className="server_terminal_input"
+                id="server-terminal-input"
+                onKeyDown={(event) => {
+                    if (event.key == "Enter") {
+                        SendControl("input");
+                    }
+                }}
+                spellCheck="false"
+                type="text"
+            />
             {serverData}
             <div className="control_panel">{controlPanelDOM}</div>
         </div>
+    );
+}
+
+function TerminalText(props) {
+    const lines = props.terminalData.split("\n");
+
+    if (props.terminalData == "") {
+        return;
+    }
+
+    return (
+        <a className="terminal_text">
+            {props.string}
+            <br />
+        </a>
     );
 }
