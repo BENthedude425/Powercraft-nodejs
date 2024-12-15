@@ -3,8 +3,6 @@ const cors = require("cors");
 const mysql2 = require("mysql2");
 const app = express();
 
-const sleep = require("system-sleep");
-
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
 
@@ -15,7 +13,6 @@ const fs = require("fs");
 const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
-const { resolve } = require("path");
 
 const PORT = 8080;
 var DATABASECONNECTION;
@@ -38,18 +35,36 @@ async function InitialiseDB() {
     return mysql2.createConnection(DATABASECONFIGS);
 }
 
-async function CheckUserExists(username, password, callback) {
+async function CheckUserExists(username, password) {
+    const SQLquery = "SELECT * FROM users WHERE username= ? AND password= ?";
     hashedPass = HashNewPass(password);
-    DATABASECONNECTION.query(
-        `SELECT * FROM users WHERE username='${username}' AND password='${hashedPass}'`,
-        callback
-    );
+
+    return await new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(
+            SQLquery,
+            [username, hashedPass],
+            (error, results, _) => {
+                if (error) {
+                    modules.Log(FILEIDENT, error);
+                    reject();
+                }
+
+                if (results.length == 0) {
+                    resolve(false);
+                }
+
+                resolve(true);
+            }
+        );
+    });
 }
 
 async function JWTCheck(token) {
+    const SQLquery = "SELECT * FROM users WHERE auth_token= ?";
     return new Promise((resolve, reject) => [
         DATABASECONNECTION.query(
-            `SELECT * FROM users WHERE auth_token='${token}'`,
+            SQLquery,
+            [token],
             (error, results, fields) => {
                 if (error) {
                     reject();
@@ -66,10 +81,8 @@ function HashNewPass(pass) {
 }
 
 function LoginUser(username, newToken, callback) {
-    DATABASECONNECTION.query(
-        `UPDATE users SET auth_token='${newToken}' WHERE username='${username}'`,
-        callback
-    );
+    const SQLquery = "UPDATE users SET auth_token= ? WHERE username= ?";
+    DATABASECONNECTION.query(SQLquery, [newToken, username], callback);
 
     return newToken;
 }
@@ -86,10 +99,12 @@ async function GenerateAuthToken() {
             authToken += CHARS.charAt(Math.floor(Math.random() * CHARSLEN));
         }
 
+        const SQLquery = "SELECT * FROM users WHERE auth_token = ?";
         await new Promise((resolve, reject) => {
             DATABASECONNECTION.query(
-                `SELECT * FROM users WHERE auth_token='${authToken}'`,
-                (error, results, fields) => {
+                SQLquery,
+                [authToken],
+                (error, results, _) => {
                     if (error) {
                         modules.Log(FILEIDENT, error);
                     }
@@ -172,24 +187,22 @@ function GetServerPath(serverName) {
 }
 
 function GetServerFromID(serverID) {
+    const SQLquery = "SELECT * FROM servers WHERE ID = ?";
     return new Promise((resolve, reject) => {
-        DATABASECONNECTION.query(
-            `SELECT * FROM servers WHERE ID = ${serverID}`,
-            (error, results, _) => {
-                if (error != null) {
-                    modules.Log(error);
-                }
-
-                resolve(results[0]);
+        DATABASECONNECTION.query(SQLquery, [serverID], (error, results, _) => {
+            if (error != null) {
+                modules.Log(error);
             }
-        );
+
+            resolve(results[0]);
+        });
     });
 }
 
 function GetUniqueServerID() {
     return new Promise((resolve, reject) => {
         DATABASECONNECTION.query(
-            `SELECT * FROM servers`,
+            "SELECT * FROM servers",
             (error, results, _) => {
                 if (error != null) {
                     modules.Log(error);
@@ -208,14 +221,13 @@ function GetServerIDFromURL(req) {
 }
 
 function ChangeServerStatus(serverID, newStatus) {
-    DATABASECONNECTION.query(
-        `UPDATE servers SET server_status = "${newStatus}" WHERE ID = ${serverID}`,
-        (error) => {
-            if (error != null) {
-                modules.Log(FILEIDENT, error);
-            }
+    const SQLquery = "UPDATE servers SET server_status = ? WHERE ID = ?";
+
+    DATABASECONNECTION.query(SQLquery, [newStatus, serverID], (error) => {
+        if (error != null) {
+            modules.Log(FILEIDENT, error);
         }
-    );
+    });
 }
 
 function CreateServerDir(serverName) {
@@ -246,20 +258,29 @@ async function CreateServer(serverSettings, propertiesString) {
     let link = sources[launcherType];
     link = link[version];
 
-    if (launcherType == "Forge") {
-        const forgeRelease = serverSettings.forgeReleaseSelect;
+    switch (launcherType) {
+        case "Forge":
+            const forgeRelease = serverSettings.forgeReleaseSelect;
+            for (let i = 0; i < link.length; i++) {
+                const selectedLink = link[i];
 
-        for (let i = 0; i < link.length; i++) {
-            const selectedLink = link[i];
-            if (selectedLink.release == forgeRelease) {
-                link = selectedLink.link;
-                launcherFileName = `forge-${version}-${selectedLink.release}.jar`;
-                break;
+                if (selectedLink.file == forgeRelease) {
+                    link = selectedLink.link;
+                    launcherFileName = `forge-${version}-${selectedLink.file}.jar`;
+
+                    break;
+                }
             }
-        }
-    } else {
-        launcherFileName = `${link.file}.jar`;
-        link = link.link;
+            break;
+        case "Spigot":
+            link =
+                "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar";
+            launcherFileName = "BuildTools.jar";
+            break;
+        default:
+            launcherFileName = `${link.file}.jar`;
+            link = link.link;
+            break;
     }
 
     // Get all paths for files
@@ -282,26 +303,11 @@ async function CreateServer(serverSettings, propertiesString) {
     await fs.writeFileSync(eulaPath, "eula=true");
 
     // Download jar file
-    await DownloadAndSaveFile(link, launcherFilePath);
+    await modules.DownloadAndSaveFile(link, launcherFilePath);
 
     // Update server status to installing
     ChangeServerStatus(serverID, "Installing");
     return launcherFileName;
-}
-
-async function DownloadFile(URL) {
-    return await fetch(URL).then((res) => res.blob());
-}
-
-async function DownloadAndSaveFile(URL, downloadPath) {
-    modules.Log(FILEIDENT, `Downloading file from: ${URL}`);
-    const fileContents = await DownloadFile(URL);
-
-    var buffer = await fileContents.arrayBuffer();
-    buffer = Buffer.from(buffer);
-
-    fs.createWriteStream(downloadPath).write(buffer);
-    modules.Log(FILEIDENT, `File Downloaded`);
 }
 
 // API ACTIONS
@@ -333,10 +339,13 @@ app.post("/api/create-user", async (req, res) => {
 
     // Check if the username is taken
     var promiseFailed = false;
+
+    const SQLquery = "SELECT * FROM USERS WHERE username= ?";
     await new Promise((resolve, reject) => {
         DATABASECONNECTION.query(
-            `SELECT * FROM USERS WHERE username='${credentials["username"]}'`,
-            (error, results, fields) => {
+            SQLquery,
+            [credentials["username"]],
+            (error, results, _) => {
                 if (error) {
                     reject(error);
                 }
@@ -350,8 +359,10 @@ app.post("/api/create-user", async (req, res) => {
             }
         );
 
+        const SQLquery2 = "SELECT * FROM userrequests WHERE username=";
         DATABASECONNECTION.query(
-            `SELECT * FROM userrequests WHERE username='${credentials["username"]}'`,
+            SQLquery2,
+            [credentials["username"]],
             (error, results, fields) => {
                 if (error) {
                     reject(error);
@@ -379,8 +390,11 @@ app.post("/api/create-user", async (req, res) => {
         const currentDate = `"${date.getUTCFullYear()}-${date.getMonth()}-${date.getDate()}"`;
         const currentTime = `"${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}"`;
 
+        const SQLquery =
+            "INSERT INTO userrequests(username, password, date, time) VALUES(?, ?, ?, ?,)";
         DATABASECONNECTION.query(
-            `INSERT INTO userrequests(username, password, date, time) VALUES("${credentials["username"]}", "${hashedPass}", ${currentDate}, ${currentTime})`,
+            SQLquery,
+            [credentials.username, hashedPass, currentDate, currentTime],
             (error, results, fields) => {
                 if (error) {
                     modules.Log(FILEIDENT, error);
@@ -424,10 +438,11 @@ app.post("/api/create-server", async (req, res) => {
     modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Installing server");
 
     const serverPath = GetServerPath(serverSettings.server_name);
-
+    const SQLquery = "INSERT INTO servers(id, server_name, server_icon_path, server_executable_path, server_launcher_type, server_version, forge_release, server_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     // Create entry in the table
     DATABASECONNECTION.query(
-        `INSERT INTO servers(id, server_name, server_icon_path, server_executable_path, server_launcher_type, server_version, forge_release, server_status) VALUES (${serverSettings.ID}, "${serverSettings.server_name}", "${serverSettings.image_path}", "${serverPath}/${launcherFileName}", "${serverSettings.launcherTypeSelect}", "${serverSettings.versionSelect}", "${serverSettings.forgeReleaseSelect}", "downloading")`,
+        SQLquery,
+        [serverSettings.ID, serverSettings.server_name, serverSettings.image_path, launcherFileName, serverSettings.launcherTypeSelect,serverSettings.versionSelect, serverSettings.forgeReleaseSelect, "downloading"],
         (error, results, fields) => {
             if (error != null) {
                 modules.Log(error);
@@ -435,60 +450,102 @@ app.post("/api/create-server", async (req, res) => {
         }
     );
 
-    if (serverSettings.launcherType == "Forge") {
-        const terminalLogPath = `${serverPath}/terminal.txt`;
-        const command = `cd ${serverPath} && java -jar ${launcherFileName} --installServer`;
-        const installer_process = exec(command);
+    const terminalLogPath = `${serverPath}/terminal.txt`;
+    var command;
+    var installer_process;
+    ChangeServerStatus(serverSettings.ID, "Installing");
 
-        installer_process.stdout.on("data", (data) => {
-            fs.appendFileSync(terminalLogPath, data);
-        });
+    // OPTIMSE HERE
+    switch (serverSettings.launcherTypeSelect) {
+        case "Forge":
+            command = `cd ${serverPath} && java -jar ${launcherFileName} --installServer`;
+            installer_process = exec(command);
 
-        installer_process.stderr.on("data", (data) => {
-            fs.appendFileSync(terminalLogPath, data);
-        });
+            installer_process.stdout.on("data", (data) => {
+                fs.appendFileSync(terminalLogPath, data);
+            });
 
-        installer_process.on("exit", (code) => {
-            modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install complete");
-            fs.appendFileSync(terminalLogPath, `Install complete! \n`);
-            ChangeServerStatus(serverSettings.ID, "ready");
-        });
-    } else {
-        ChangeServerStatus(serverSettings.ID, "ready");
+            installer_process.stderr.on("data", (data) => {
+                fs.appendFileSync(terminalLogPath, data);
+            });
+
+            installer_process.on("exit", (code) => {
+                if (code == 0) {
+                    modules.Log(
+                        `${FILEIDENT}-SERVERINSTALL`,
+                        "Install complete"
+                    );
+                    fs.appendFileSync(terminalLogPath, `Install complete! \n`);
+                    ChangeServerStatus(serverSettings.ID, "Ready");
+                    return;
+                }
+                modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install failed");
+                fs.appendFileSync(terminalLogPath, `Install failed! \n`);
+                ChangeServerStatus(serverSettings.ID, "install failed");
+            });
+            break;
+        case "Spigot":
+            command = `cd ${serverPath} && java -jar BuildTools.jar --rev ${serverSettings.versionSelect}`;
+
+            installer_process = exec(command);
+
+            installer_process.stdout.on("data", (data) => {
+                fs.appendFileSync(terminalLogPath, data);
+            });
+
+            installer_process.stderr.on("data", (data) => {
+                fs.appendFileSync(terminalLogPath, data);
+            });
+
+            installer_process.on("exit", (code) => {
+                if (code == 0) {
+                    modules.Log(
+                        `${FILEIDENT}-SERVERINSTALL`,
+                        "Install complete"
+                    );
+                    fs.appendFileSync(terminalLogPath, `Install complete! \n`);
+                    ChangeServerStatus(serverSettings.ID, "Ready");
+                    return;
+                }
+                modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Install failed");
+                fs.appendFileSync(terminalLogPath, `Install failed! \n`);
+                ChangeServerStatus(serverSettings.ID, "install failed");
+            });
+            break;
+        default:
+            // If no install process is needed
+            ChangeServerStatus(serverSettings.ID, "Ready");
+            break;
     }
 
     res.redirect(`${FIXEDIPADDRESS}/dashboard`);
 });
 
 app.post("/api/login", async (req, res) => {
-    CheckUserExists(
+    const userExists = await CheckUserExists(
         req.body.username,
-        req.body.password,
-        async (error, results, fields) => {
-            if (error) {
+        req.body.password
+    );
+
+    // If user does not exist redirect to the login page
+    if (!userExists) {
+        res.redirect(`${FIXEDIPADDRESS}/login`);
+        return;
+    }
+
+    // Create new token and update the database
+    const newToken = await GenerateAuthToken();
+    LoginUser(req.body.username, newToken, (error) => {
+        if (error) {
+            {
                 modules.Log(FILEIDENT, error);
             }
-
-            newToken = await GenerateAuthToken();
-
-            if (results.length == 0) {
-                res.redirect(`${FIXEDIPADDRESS}/login`);
-                return;
-            }
-
-            LoginUser(req.body.username, newToken, (error, results, fields) => {
-                if (error) {
-                    {
-                        modules.Log(FILEIDENT, error);
-                    }
-                }
-
-                modules.Log(FILEIDENT, "logged in user");
-                res.cookie("auth_token", newToken, { maxAge: 9999999 });
-                res.redirect(`${FIXEDIPADDRESS}/dashboard`);
-            });
         }
-    );
+
+        // Once updated set the new token and redirect to the dashboard
+        res.cookie("auth_token", newToken, { maxAge: 1000 * 60 * 60 * 24 }); // maxAge 1 Day
+        res.redirect(`${FIXEDIPADDRESS}/dashboard`);
+    });
 });
 
 app.get("/api/authenticate/*", async (req, res) => {
@@ -558,18 +615,16 @@ app.get("/api/get-server-data/*", async (req, res) => {
     }
 
     const serverID = GetServerIDFromURL(req);
-    DATABASECONNECTION.query(
-        `SELECT * FROM servers WHERE ID = ${serverID}`,
-        (error, results, _) => {
-            if (error != null) {
-                modules.Log(FILEIDENT, error);
-                res.send(error);
-                return;
-            }
-
-            res.send(results);
+    const SQLquery = "SELECT * FROM servers WHERE ID = ?";
+    DATABASECONNECTION.query(SQLquery, [serverID], (error, results, _) => {
+        if (error != null) {
+            modules.Log(FILEIDENT, error);
+            res.send(error);
+            return;
         }
-    );
+
+        res.send(results);
+    });
 });
 
 app.get("/api/get-server-terminal*", async (req, res) => {
@@ -624,14 +679,21 @@ app.get("/api/set-server-control*", async (req, res) => {
     const server = await GetServerFromID(serverID);
     const serverPath = GetServerPath(server.server_name);
 
+    if (server.server_status != "Ready") {
+        res.json(["failed", `The server is ${server.server_status}`]);
+        return;
+    }
+
     // Check the process is retrievable
     if (action != "start") {
         try {
             const process = SERVERPROCESSES[serverID];
             if (process == null) {
                 res.json([
-                    ["failed",
-                    `Could not find the server process. More advanced response needs to be put in place here though, lol`,]
+                    [
+                        "failed",
+                        `Could not find the server process. More advanced response needs to be put in place here though, lol`,
+                    ],
                 ]);
                 return;
             }
@@ -643,9 +705,27 @@ app.get("/api/set-server-control*", async (req, res) => {
 
     switch (action) {
         case "start":
-            ChangeServerStatus(serverID, "running");
+            const SQLquery = "SELECT * FROM powercraft.servers WHERE ID = ?";
+            // Get the exectable files name from the sql database (needs changing to allow .bat / .sh files)
+            const executableName = await new Promise((resolve, reject) => {
+                DATABASECONNECTION.query(
+                    SQLquery,
+                    [serverID],
+                    (error, results, _) => {
+                        if (error != null) {
+                            modules.Log(FILEIDENT, error);
+                            res.json(["failed", error]);
+                            return;
+                        }
+
+                        resolve(results[0].server_executable_path);
+                    }
+                );
+            });
+
+            ChangeServerStatus(serverID, "Running");
             // get the file name automatically
-            const command = `cd ${serverPath} && java -jar Spigot-1.20.4.jar`;
+            const command = `cd ${serverPath} && java -jar ${executableName}`;
             var serverProcess = exec(command);
 
             serverProcess.stdout.on("data", (data) => {
@@ -668,7 +748,7 @@ app.get("/api/set-server-control*", async (req, res) => {
             SERVERPROCESSES[serverID] = serverProcess;
             break;
         case "stop":
-            ChangeServerStatus(serverID, "stopped");
+            ChangeServerStatus(serverID, "Stopped");
 
             var serverProcess = SERVERPROCESSES[serverID];
             serverProcess.stdin.write("stop\n");
@@ -700,7 +780,7 @@ app.get("/api/input-server-terminal*", async (req, res) => {
                 "failed",
                 "Could not find the server process to exec this command",
             ]);
-            return
+            return;
         }
 
         process.stdin.write(`${input}\n`);
@@ -727,7 +807,8 @@ app.get("/db/*", async (req, res) => {
         return;
     }
 
-    DATABASECONNECTION.query(`SELECT * FROM ${db}`, (err, results, fields) => {
+    const SQLquery = "SELECT * FROM ?";
+    DATABASECONNECTION.query(SQLquery, [db], (err, results, fields) => {
         res.jsonp(results);
     });
 });
@@ -758,7 +839,7 @@ app.get("/images/*", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    modules.Log(FILEIDENT, `server started on port ${PORT}`);
+    modules.Log(FILEIDENT, `Server started on port ${PORT}`);
 });
 
 function GetCookies(req) {
