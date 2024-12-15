@@ -107,7 +107,7 @@ export default function PCreateServer() {
                     style={{ visibility: "Hidden" }}
                 >
                     {forgeReleases.map((release) => {
-                        return <option key={release}>{release.release}</option>;
+                        return <option >{release.file}</option>;
                     })}
                 </select>
 

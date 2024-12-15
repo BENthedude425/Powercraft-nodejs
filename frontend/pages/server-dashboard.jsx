@@ -1,5 +1,7 @@
 import { React, useEffect, useState } from "react";
 import "../src/assets/main.css";
+
+import Header from "../src/components/Header";
 import GetAPIAddr from "../src/assets/getAPIAddr";
 
 const APIADDR = GetAPIAddr();
@@ -118,6 +120,7 @@ export default function PServerDashboard() {
 
     return (
         <div>
+            <Header />
             <div id="server_terminal" className="server_terminal">
                 {terminalData.split("\n").map((string) => {
                     keyID++;
@@ -144,6 +147,7 @@ export default function PServerDashboard() {
             />
             {serverData}
             <div className="control_panel">{controlPanelDOM}</div>
+            add checks to the control panel API to check the state of the server on the database and respond with a suitable reply
         </div>
     );
 }

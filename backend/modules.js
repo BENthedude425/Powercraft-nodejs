@@ -1,4 +1,5 @@
 const fs = require('fs')
+const FILEIDENT = "MODULES"
 
 const MINECRAFTPROPERTIES = [
   { 'enable-jmx-monitoring': [false, true] },
@@ -100,6 +101,7 @@ function Log (fileIDENT, message, center = false) {
   whiteSpace = ''
 
   prefix = `[${String(fileIDENT).toUpperCase()}]`
+  message = message[0].toUpperCase() + message.slice(1)
 
   for (i = 0; i < whiteSpaceNumber - prefix.length; i++) {
     whiteSpace += ' '
@@ -133,11 +135,28 @@ function GetParsedFile (filepath) {
   return JSON.parse(String(fs.readFileSync(filepath)))
 }
 
+async function DownloadFile(URL) {
+  return await fetch(URL).then((res) => res.blob());
+}
+
+async function DownloadAndSaveFile(URL, downloadPath) {
+  Log(FILEIDENT, `Downloading file from: ${URL}`);
+  const fileContents = await DownloadFile(URL);
+
+  var buffer = await fileContents.arrayBuffer();
+  buffer = Buffer.from(buffer);
+
+  fs.createWriteStream(downloadPath).write(buffer);
+  Log(FILEIDENT, `File Downloaded`);
+}
+
 module.exports = {
   Log,
   GetParsedFile,
   GetFilePath,
   GetFilePaths,
   GetFilePrefix,
-  GetServerProperties
+  GetServerProperties,
+  DownloadFile,
+  DownloadAndSaveFile,
 }
