@@ -101,7 +101,12 @@ function Log (fileIDENT, message, center = false) {
   whiteSpace = ''
 
   prefix = `[${String(fileIDENT).toUpperCase()}]`
-  message = message[0].toUpperCase() + message.slice(1)
+  
+
+  // If message is a string capitalise the first letter
+  if(typeof message == "string"){
+    message = message[0].toUpperCase() + message.slice(1)
+  }
 
   for (i = 0; i < whiteSpaceNumber - prefix.length; i++) {
     whiteSpace += ' '
