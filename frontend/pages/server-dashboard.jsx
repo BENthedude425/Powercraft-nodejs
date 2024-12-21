@@ -19,7 +19,7 @@ function SendControl(action) {
             response.json().then(
                 (responseJSON) => {
                 if (responseJSON[0] != "success") {
-                    alert(responseJSON);
+                    alert(responseJSON[1]);
                     return
                 }
                 terminalInputDOM.value = "";
@@ -33,7 +33,8 @@ function SendControl(action) {
     }).then((response) => {
         response.json().then((responseJSON) => {
             if (responseJSON[0] != "success") {
-                alert(responseJSON);
+                alert(responseJSON[1]);
+                return;
             }
         });
     });

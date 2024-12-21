@@ -37,7 +37,7 @@ function ServerList() {
 
     useEffect(() => {
         // Collect server data to populate the server list
-        fetch(`${APIADDR}/db/servers`, {
+        fetch(`${APIADDR}/api/get-all-servers`, {
             credentials: "include",
         }).then((response) => {
             response.json().then((responseJSON) => {
