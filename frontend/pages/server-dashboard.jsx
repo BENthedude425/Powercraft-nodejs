@@ -16,11 +16,10 @@ function SendControl(action) {
         fetch(`${APIADDR}/api/input-server-terminal/${input}/${serverID}`, {
             credentials: "include",
         }).then((response) => {
-            response.json().then(
-                (responseJSON) => {
+            response.json().then((responseJSON) => {
                 if (responseJSON[0] != "success") {
                     alert(responseJSON[1]);
-                    return
+                    return;
                 }
                 terminalInputDOM.value = "";
             });
@@ -81,7 +80,12 @@ export default function PServerDashboard() {
     const [terminalData, setTerminalData] = useState("");
     const [controlPanelDOM, setControlPanelDOM] = useState(<ControlPanel />);
 
-    function LiveTerminal(terminalLines) {
+    useEffect(() => {
+        LongPollTerminal(0);
+    }, []);
+
+    function LongPollTerminal(terminalLines) {
+
         fetch(
             `${APIADDR}/api/get-server-terminal/${terminalLines}/${serverID}`,
             {
@@ -90,23 +94,30 @@ export default function PServerDashboard() {
         ).then((response) => {
             response.json().then((responseJSON) => {
                 setTerminalData(responseJSON[1].join("\n"));
-                //setTerminalLines(responseJSON[0]);
 
-                LiveTerminal(responseJSON[0]);
+                LongPollTerminal(responseJSON[0]);
             });
         });
     }
 
-    useEffect(() => {
-        fetch(`${APIADDR}/api/get-server-data/${serverID}`, {
-            credentials: "include",
-        }).then((response) => {
-            response.text().then((responseText) => {
-                setServerData(responseText);
-            });
-        });
-        LiveTerminal(0);
-    }, []);
+    function Terminal() {
+
+
+        return (
+            <div id="server_terminal" className="server_terminal">
+                {terminalData.split("\n").map((string) => {
+                    keyID++;
+                    return (
+                        <TerminalText
+                            terminalData={terminalData}
+                            string={string}
+                            key={keyID}
+                        />
+                    );
+                })}
+            </div>
+        );
+    }
 
     useEffect(() => {
         if (serverTerminalDOM != null) {
@@ -122,18 +133,9 @@ export default function PServerDashboard() {
     return (
         <div>
             <Header />
-            <div id="server_terminal" className="server_terminal">
-                {terminalData.split("\n").map((string) => {
-                    keyID++;
-                    return (
-                        <TerminalText
-                            terminalData={terminalData}
-                            string={string}
-                            key={keyID}
-                        />
-                    );
-                })}
-            </div>
+                <Terminal />
+           
+
 
             <input
                 className="server_terminal_input"
@@ -148,14 +150,13 @@ export default function PServerDashboard() {
             />
             {serverData}
             <div className="control_panel">{controlPanelDOM}</div>
-            add checks to the control panel API to check the state of the server on the database and respond with a suitable reply
+            add checks to the control panel API to check the state of the server
+            on the database and respond with a suitable reply
         </div>
     );
 }
 
 function TerminalText(props) {
-    const lines = props.terminalData.split("\n");
-
     if (props.terminalData == "") {
         return;
     }

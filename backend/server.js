@@ -13,6 +13,7 @@ const fs = require("fs");
 const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
+const md5 = require("md5");
 
 var DATABASECONNECTION;
 var DATABASECONFIGS;
@@ -28,11 +29,17 @@ const FIXEDIPADDRESS = "http://192.168.0.62";
 
 // An object containing all of the running server processes
 const SERVERPROCESSES = {};
-const DEFAULTEXECUTABLEFILE = {
-    Forge: "run.bat",
-    Spigot: "run.bat",
-    Vanilla: "",
-};
+
+function GetExecutablePath(server) {
+    switch (server.server_launcher_type) {
+        case "Forge":
+            return "run.bat";
+        case "Spigot":
+            return `Spigot-${server.server_version}.jar`;
+        default:
+            return "";
+    }
+}
 
 async function InitialiseDB() {
     await LoadConfigs();
@@ -172,39 +179,42 @@ async function INIT() {
     DATABASECONNECTION = await InitialiseDB();
     await Setup();
 
-    await SetAllServersStopped()
+    await SetAllServersStopped();
     modules.Log(FILEIDENT, "FINISHED INIT", true);
 }
 
 // Initialise systems
 INIT();
 
-async function SetAllServersStopped(){
-    return await new Promise((resolve, reject) =>{
+async function SetAllServersStopped() {
+    return await new Promise((resolve, reject) => {
         DATABASECONNECTION.query(
             `SELECT * FROM servers WHERE server_status = 'Running'`,
-            (error, results, _) =>{
-                if (error != null){
-                    modules.Log(FILEIDENT, error)
+            (error, results, _) => {
+                if (error != null) {
+                    modules.Log(FILEIDENT, error);
                 }
 
-                for(result of results){
+                for (result of results) {
                     DATABASECONNECTION.query(
                         `UPDATE servers SET server_status = 'Stopped' WHERE ID = ${result.ID}`,
                         (error) => {
-                            if(error != null){
-                                modules.Log(FILEIDENT, error)
-                            }else{
-                                modules.Log(FILEIDENT, `Stopped server: "${result.server_name}". This server may have suffered data corruption or loss.`)
+                            if (error != null) {
+                                modules.Log(FILEIDENT, error);
+                            } else {
+                                modules.Log(
+                                    FILEIDENT,
+                                    `Stopped server: "${result.server_name}". This server may have suffered data corruption or loss.`
+                                );
                             }
-                        } 
-                    )
+                        }
+                    );
                 }
 
-                resolve()
+                resolve();
             }
-        )
-    })
+        );
+    });
 }
 
 // ---------- APP HANDLERS ---------- \\
@@ -332,10 +342,34 @@ async function CreateServer(serverSettings, propertiesString) {
     await fs.writeFileSync(propertiesPath, propertiesString);
 
     // Create the terminal log file
+    // Change this to a buffer and only store on shutdown or periodically
     await fs.writeFileSync(terminalPath, "");
 
     // Agree to the eula
     await fs.writeFileSync(eulaPath, "eula=true");
+
+    const SQLquery =
+        "INSERT INTO servers(id, server_name, server_icon_path, server_executable_path, server_launcher_type, server_version, forge_release, server_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+    // Create entry in the table
+    DATABASECONNECTION.query(
+        SQLquery,
+        [
+            serverSettings.ID,
+            serverSettings.server_name,
+            serverSettings.image_path,
+            launcherFilePath,
+            serverSettings.launcherTypeSelect,
+            serverSettings.versionSelect,
+            serverSettings.forgeReleaseSelect,
+            "Downloading",
+        ],
+        (error, _) => {
+            if (error != null) {
+                modules.Log(error);
+            }
+        }
+    );
 
     // Download jar file
     await modules.DownloadAndSaveFile(link, launcherFilePath);
@@ -380,8 +414,7 @@ async function InstallServer(serverID, command) {
             ChangeServerStatus(server.ID, "Ready");
 
             // Update to the new exec path
-            const newExecPath =
-                DEFAULTEXECUTABLEFILE[server.server_launcher_type];
+            const newExecPath = GetExecutablePath(server);
             if (newExecPath != "") {
                 const SQLquery = `UPDATE servers SET server_executable_path = ? WHERE ID = ?`;
                 DATABASECONNECTION.query(
@@ -408,13 +441,13 @@ async function InstallServer(serverID, command) {
 function ReturnRunCommand(server) {
     const pathPosition = server.server_executable_path.lastIndexOf(".");
     const fileExtension = server.server_executable_path.slice(pathPosition);
-    const serverPath = GetServerPath(server.server_name)
+    const serverPath = GetServerPath(server.server_name);
 
     switch (fileExtension) {
         case ".jar":
             return `cd ${serverPath} && java -jar ${server.server_executable_path}`;
         default:
-            return `cd ${serverPath} && ${server.server_executable_path}`
+            return `cd ${serverPath} && ${server.server_executable_path}`;
     }
 }
 
@@ -438,7 +471,7 @@ function RunServer(server) {
     });
 
     serverProcess.on("exit", (code) => {
-        ChangeServerStatus(serverID, "Stopped")
+        ChangeServerStatus(serverID, "Stopped");
         fs.appendFileSync(
             `${serverPath}/terminal.txt`,
             `The server has closed with code: ${code}\n`
@@ -570,35 +603,14 @@ app.post("/api/create-server", async (req, res) => {
         );
     }
 
+    res.redirect(`${FIXEDIPADDRESS}/dashboard`);
+
     // Create directory and download files and return path to the executable
     const launcherFileName = await CreateServer(serverSettings, properties);
 
     // Install server
     // java -jar filename --installServer
     modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Installing server");
-
-    const SQLquery =
-        "INSERT INTO servers(id, server_name, server_icon_path, server_executable_path, server_launcher_type, server_version, forge_release, server_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
-    // Create entry in the table
-    DATABASECONNECTION.query(
-        SQLquery,
-        [
-            serverSettings.ID,
-            serverSettings.server_name,
-            serverSettings.image_path,
-            launcherFileName,
-            serverSettings.launcherTypeSelect,
-            serverSettings.versionSelect,
-            serverSettings.forgeReleaseSelect,
-            "Downloading",
-        ],
-        (error, _) => {
-            if (error != null) {
-                modules.Log(error);
-            }
-        }
-    );
 
     // Set any installation instructions (if any needed)
     const serverPath = GetServerPath(serverSettings.server_name);
@@ -615,8 +627,6 @@ app.post("/api/create-server", async (req, res) => {
     } else {
         InstallServer(serverSettings.ID, command);
     }
-
-    res.redirect(`${FIXEDIPADDRESS}/dashboard`);
 });
 
 app.post("/api/login", async (req, res) => {
@@ -725,6 +735,7 @@ app.get("/api/get-server-data/*", async (req, res) => {
     });
 });
 
+// Long poll
 app.get("/api/get-server-terminal*", async (req, res) => {
     // Check that the user is JWT authenticated
     const token = GetCookie(req, "auth_token");
@@ -762,6 +773,43 @@ app.get("/api/get-server-terminal*", async (req, res) => {
     }, 50);
 });
 
+// Long poll
+app.get("/api/get-all-servers/*", async (req, res) => {
+    // Check that the user is JWT authenticated
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    if (!auth) {
+        res.json(["Failed to authenticate!"]);
+        return;
+    }
+
+    // Get the hash
+    const hash = req.path.slice(req.path.lastIndexOf("/") + 1);
+
+    var timer = setInterval(async () => {
+        const results = await new Promise((resolve, reject) => {
+            DATABASECONNECTION.query(
+                "SELECT * FROM servers",
+                (error, results) => {
+                    if (error != null) {
+                        reject();
+                    }
+
+                    resolve(results);
+                }
+            );
+        });
+
+        const newHash = md5(JSON.stringify(results));
+
+        if (hash != newHash || res.closed) {
+            res.json([newHash, results]);
+            clearInterval(timer);
+        }
+    }, 250);
+});
+
 // Returns true if the server is found
 function CheckServerIsRunning(serverID) {
     const process = SERVERPROCESSES[serverID];
@@ -781,6 +829,7 @@ app.get("/api/set-server-control*", async (req, res) => {
     const serverID = GetServerIDFromURL(req);
     const action = req.path.split("/")[req.path.split("/").length - 2];
     const server = await GetServerFromID(serverID);
+    const serverPath = GetServerPath(server.server_name);
 
     if (server.server_status == "Installing") {
         res.json(["failed", "The server has not finished installing."]);
@@ -800,9 +849,7 @@ app.get("/api/set-server-control*", async (req, res) => {
 
     switch (action) {
         case "start":
-            console.log(server.server_status);
             if (server.server_status == "Install_failed") {
-                console.log(server);
                 const command = ReturnInstallCommand(
                     server.server_launcher_type,
                     serverPath,
@@ -860,26 +907,6 @@ app.get("/api/input-server-terminal*", async (req, res) => {
     }
 
     res.json(["success"]);
-});
-
-app.get("/api/get-all-servers", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
-    DATABASECONNECTION.query("SELECT * FROM servers", (error, results) => {
-        if (error != null) {
-            res.jsonp(["Failed", error]);
-            return;
-        }
-
-        res.jsonp(results);
-    });
 });
 
 // THIS IS ONLY HERE FOR DEBUGGING PURPOSES AND WILL NOT BE INCLUDED ON RELEASES
