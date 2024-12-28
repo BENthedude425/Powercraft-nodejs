@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import Header from "../src/components/Header";
 import GetAPIAddr from "../src/assets/getAPIAddr";
-import ServerProperty from "../src/components/ServerProperty";
+import ServerProperties from "../src/components/ServerProperties";
 import "../src/assets/create-server.css";
 
 import DEFAULTSERVERIMAGE from "../public/pic1.png";
@@ -10,7 +10,6 @@ import DEFAULTSERVERIMAGE from "../public/pic1.png";
 const APIADDR = GetAPIAddr();
 
 export default function PCreateServer() {
-    const [serverProperties, setServerProperties] = useState([]);
     const [serverIMGSrc, setServerIMG] = useState(DEFAULTSERVERIMAGE);
     const [serverVersionsData, setServerVersionsData] = useState([]);
     const [launcherVersions, setLauncherVersions] = useState([]);
@@ -21,16 +20,6 @@ export default function PCreateServer() {
             setServerIMG(URL.createObjectURL(event.target.files[0]));
         }
     };
-
-    useEffect(() => {
-        fetch(`${APIADDR}/api/get-server-properties`, {
-            credentials: "include",
-        }).then((response) => {
-            response.json().then((responseJSON) => {
-                setServerProperties(responseJSON);
-            });
-        });
-    }, []);
 
     useEffect(() => {
         fetch(`${APIADDR}/api/get-server-versions`, {
@@ -112,14 +101,7 @@ export default function PCreateServer() {
                 </select>
 
                 <div className="option-grid">
-                    {serverProperties.map((data) => {
-                        const key = Object.keys(data)[0];
-                        const options = data[key];
-
-                        return (
-                            <ServerProperty key={key} setting={key} options={options} />
-                        );
-                    })}
+                    <ServerProperties />
                 </div>
 
                 <input type="submit" />

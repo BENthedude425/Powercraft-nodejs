@@ -1,4 +1,12 @@
 .json
+
+
+# Ignore all images except default.png
 /backend/images/*
+!/backend/images/default.png
+
+# VScode extension
 .VSCodeCounter
+
+# All servers being created on the local machine while testing / developing
 servers

@@ -6,6 +6,17 @@ import ServerList from "../src/components/ServerList";
 import "../src/assets/dashboard.css";
 import "../src/assets/main.css";
 import "../src/assets/app.css"
+import GetAPIAddr from "../src/assets/getAPIAddr";
+
+function RemoveServers(){
+    fetch(`${GetAPIAddr()}/api/REMOVESERVERS`, {credentials: "include"}).then((response) =>[
+        response.text().then((responseText) =>{
+            if(responseText != ""){
+                alert(responseText)
+            }
+        })
+    ])
+}
 
 export default function PDashboard(){
     return(
@@ -17,6 +28,9 @@ export default function PDashboard(){
                 
                 <div className="dashboard-container">
                     <div className="dashboard-content">
+                        <button onClick={RemoveServers}>
+                            Remove Servers (CAN CAUSE CRASH)
+                        </button>
                     </div>
                 </div>
 

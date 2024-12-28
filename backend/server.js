@@ -24,8 +24,9 @@ const PORT = 8080;
 const FILEIDENT = "server.js";
 
 //const FIXEDIPADDRESS = 'http://newhost425.ddns.net:81'
+const FIXEDIPADDRESS = 'http://test.powercraft.uk:81'
 //const FIXEDIPADDRESS = "http://localhost";
-const FIXEDIPADDRESS = "http://192.168.0.62";
+//const FIXEDIPADDRESS = "http://192.168.0.62";
 
 // An object containing all of the running server processes
 const SERVERPROCESSES = {};
@@ -445,7 +446,7 @@ function ReturnRunCommand(server) {
 
     switch (fileExtension) {
         case ".jar":
-            return `cd ${serverPath} && java -jar ${server.server_executable_path}`;
+            return `cd ${serverPath} && java -jar ${server.server_executable_path} nogui`;
         default:
             return `cd ${serverPath} && ${server.server_executable_path}`;
     }
@@ -927,6 +928,22 @@ if (DEVMODE) {
             }
         );
     });
+
+    app.get("/api/REMOVESERVERS", (req, res) =>{
+        modules.Log("WARNING", "REMOVING ALL SERVERS")
+        DATABASECONNECTION.query("DELETE FROM servers", (error) =>{
+            if(error != null){
+                res.send(error)
+            }
+        })
+
+        fs.rm(GetServerPath(""), {recursive: true}, (error) =>{
+            if(error != null){
+                modules.Log(FILEIDENT, error)
+            }
+        })
+        res.send("")
+    })
 }
 
 app.get("/createnewrootuser", async (req, res) => {
@@ -986,8 +1003,6 @@ function GetCookie(req, cookieName) {
 
     return false;
 }
-
-// Review if servers table is necessary or if any data needs to be added into any tables
 
 // BINGO BANGO BONGO, BISH BASH BOSH!
 // Author, BENthedude425.

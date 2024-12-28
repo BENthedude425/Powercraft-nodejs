@@ -73,8 +73,8 @@ function ControlPanel() {
 }
 
 export default function PServerDashboard() {
-    const serverTerminalDOM = document.getElementById("server_terminal");
-
+    const [serverTerminalDOM, setServerTerminalDOM] = useState(null)
+    
     const [serverData, setServerData] = useState("Loading data");
     //const [terminalLines, setTerminalLines] = useState(0);
     const [terminalData, setTerminalData] = useState("");
@@ -85,7 +85,6 @@ export default function PServerDashboard() {
     }, []);
 
     function LongPollTerminal(terminalLines) {
-
         fetch(
             `${APIADDR}/api/get-server-terminal/${terminalLines}/${serverID}`,
             {
@@ -94,7 +93,13 @@ export default function PServerDashboard() {
         ).then((response) => {
             response.json().then((responseJSON) => {
                 setTerminalData(responseJSON[1].join("\n"));
-
+                
+                if (serverTerminalDOM != null) {
+                    serverTerminalDOM.scrollTop =
+                        serverTerminalDOM.scrollHeight;
+                }else{
+                    setServerTerminalDOM(document.getElementById("server_terminal"))
+                }
                 LongPollTerminal(responseJSON[0]);
             });
         });
@@ -102,11 +107,11 @@ export default function PServerDashboard() {
 
     function Terminal() {
 
-
         return (
-            <div id="server_terminal" className="server_terminal">
+            <>
                 {terminalData.split("\n").map((string) => {
                     keyID++;
+
                     return (
                         <TerminalText
                             terminalData={terminalData}
@@ -115,7 +120,7 @@ export default function PServerDashboard() {
                         />
                     );
                 })}
-            </div>
+            </>
         );
     }
 
@@ -133,10 +138,9 @@ export default function PServerDashboard() {
     return (
         <div>
             <Header />
-                <Terminal />
-           
-
-
+            <div id="server_terminal" className="server_terminal">
+            <Terminal />
+            </div>
             <input
                 className="server_terminal_input"
                 id="server-terminal-input"
@@ -157,6 +161,7 @@ export default function PServerDashboard() {
 }
 
 function TerminalText(props) {
+    
     if (props.terminalData == "") {
         return;
     }
