@@ -11,8 +11,8 @@ export default function PServerProperties() {
     const serverID = splitURL[splitURL.length - 1];
 
     const [xr, y] = useState([""]);
-    
-    useEffect(() =>{
+
+    useEffect(() => {
         fetch(`${APIADDR}/api/get-server-properties/${serverID}`, {
             credentials: "include",
         }).then((response) => {
@@ -20,16 +20,22 @@ export default function PServerProperties() {
                 y(responseText);
             });
         });
-    }, [])
-    
+    }, []);
 
     return (
         <div>
             <Header />
+            <form
+                action={`${APIADDR}/api/set-server-properties/${serverID}`}
+                method="POST"
+                encType="multipart/form-data"
+            >
                 <div className="option-grid">
-                    <ServerProperties serverID={serverID}/>
+                    <ServerProperties serverID={serverID} />
                 </div>
+
+                <input type="submit" />
+            </form>
         </div>
     );
 }
-
