@@ -1,7 +1,7 @@
 import { React, useEffect, useState } from "react";
 import "../src/assets/main.css";
 
-import Header from "../src/components/Header";
+import Header from "../src/components/CHeader";
 import GetAPIAddr from "../src/assets/getAPIAddr";
 
 const APIADDR = GetAPIAddr();
@@ -74,10 +74,9 @@ function ControlPanel() {
 
 export default function PServerDashboard() {
     const [serverTerminalDOM, setServerTerminalDOM] = useState(null)
-    
-    const [serverData, setServerData] = useState("Loading data");
-    //const [terminalLines, setTerminalLines] = useState(0);
     const [terminalData, setTerminalData] = useState("");
+
+    const [serverData, setServerData] = useState("Loading data");
     const [controlPanelDOM, setControlPanelDOM] = useState(<ControlPanel />);
 
     useEffect(() => {
@@ -152,10 +151,17 @@ export default function PServerDashboard() {
                 spellCheck="false"
                 type="text"
             />
+
+
             {serverData}
+
+            <button onClick={() =>{                
+                const splitURL = window.location.href.split("/")
+                const serverID = splitURL[splitURL.length - 1]
+
+                window.location = `../server-properties/${serverID}`
+            }}>Edit server properties</button>
             <div className="control_panel">{controlPanelDOM}</div>
-            add checks to the control panel API to check the state of the server
-            on the database and respond with a suitable reply
         </div>
     );
 }

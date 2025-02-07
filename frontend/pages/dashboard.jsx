@@ -1,7 +1,7 @@
 import {React} from "react";
 
-import Header from "../src/components/Header";
-import ServerList from "../src/components/ServerList";
+import Header from "../src/components/CHeader";
+import ServerList from "../src/components/CServerList";
 
 import "../src/assets/dashboard.css";
 import "../src/assets/main.css";

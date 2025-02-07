@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-import Header from "../src/components/Header";
+import Header from "../src/components/CHeader";
 import GetAPIAddr from "../src/assets/getAPIAddr";
-import ServerProperties from "../src/components/ServerProperties";
+import ServerProperties from "../src/components/CServerProperties";
 import "../src/assets/create-server.css";
 
 import DEFAULTSERVERIMAGE from "../public/pic1.png";
