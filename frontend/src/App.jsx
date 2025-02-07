@@ -12,6 +12,7 @@ import Plogin from "../pages/login";
 import PDashboard from "../pages/dashboard";
 import PCreateServer from "../pages/create-server.jsx";
 import PServerDashboard from "../pages/server-dashboard.jsx";
+import PServerProperties from "../pages/server-properties.jsx";
 
 import PTest from "../pages/testpage";
 
@@ -19,6 +20,7 @@ export default function App() {
     return (
         <BrowserRouter>
             <Routes>
+
                 <Route path="/" element={<PIndex />} />
                 <Route path="login" element={<Plogin />} />
                 <Route path="create-user" element={<Pcreate_user />} />
@@ -30,6 +32,7 @@ export default function App() {
 
                     <Route path="create-server" element={<PCreateServer />} />
                     <Route path="server-dashboard/*" element={<PServerDashboard />} />
+                    <Route path="server-properties/*" element={<PServerProperties />} />
                 </Route>
             </Routes>
         </BrowserRouter>

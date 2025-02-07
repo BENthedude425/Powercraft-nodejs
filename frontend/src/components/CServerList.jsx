@@ -39,7 +39,7 @@ function CreateServerButton() {
 }
 
 
-function ServerList(currentHash) {
+function ServerList() {
     function LongPollServerList(currentHash){
     // Collect server data to populate the server list
     fetch(`${APIADDR}/api/get-all-servers/${currentHash}`, {
