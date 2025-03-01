@@ -3,6 +3,7 @@ import { React, useState, useEffect } from "react";
 import GetAPIAddr from "../assets/getAPIAddr";
 
 import "../assets/main.css";
+import "../assets/sidebar.css";
 
 function Server(props) {
     return (
@@ -14,9 +15,14 @@ function Server(props) {
         >
             {props.serverName}
             <img src={props.serverImg} />
-            <b style={{float: "right"}}>
-                {props.serverStatus}
-            </b>
+            <div>
+                <i>
+                    {props.serverLauncher} {props.serverVersion} 
+                </i>
+            </div>
+
+            
+            {props.serverStatus}
         </li>
     );
 }
@@ -38,34 +44,32 @@ function CreateServerButton() {
     );
 }
 
-
 function ServerList() {
-    function LongPollServerList(currentHash){
-    // Collect server data to populate the server list
-    fetch(`${APIADDR}/api/get-all-servers/${currentHash}`, {
-        credentials: "include",
-    }).then((response) => {
-        response.json().then((responseJSON) => { 
-            setserverlistings(responseJSON[1])
-            LongPollServerList(responseJSON[0]);
+    function LongPollServerList(currentHash) {
+        // Collect server data to populate the server list
+        fetch(`${APIADDR}/api/get-all-servers/${currentHash}`, {
+            credentials: "include",
+        }).then((response) => {
+            response.json().then((responseJSON) => {
+                setserverlistings(responseJSON[1]);
+                LongPollServerList(responseJSON[0]);
+            });
         });
-    });
     }
-
 
     const [serverlistings, setserverlistings] = useState([]);
     const APIADDR = GetAPIAddr();
 
-    useEffect(() =>{
-        LongPollServerList(0)
-    }, [])
+    useEffect(() => {
+        LongPollServerList(0);
+    }, []);
 
     // populate with data
     return (
         <ul className="server_list" id="server_list">
             <CreateServerButton />
             {serverlistings.map((data) => {
-               const serverIMG = `${APIADDR}/images/${data.server_icon_path}`;
+                const serverIMG = `${APIADDR}/images/${data.server_icon_path}`;
 
                 return (
                     <Server
@@ -73,8 +77,8 @@ function ServerList() {
                         serverID={data.ID}
                         serverName={data.server_name}
                         serverStatus={data.server_status}
-
-
+                        serverLauncher={data.server_launcher_type}
+                        serverVersion={data.server_version}
                         serverImg={serverIMG}
                     />
                 );

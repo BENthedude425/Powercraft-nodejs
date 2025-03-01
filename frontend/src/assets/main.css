@@ -3,9 +3,12 @@
     --PowercraftColor: rgb(0, 140, 255);
 
     --OpaicGrey:rgba(83, 82, 82, 0.1);
+    --OpaicDarkGrey:rgba(0, 0, 0, 0.856);
     --Grey: rgba(83, 82, 82, 0.346);
+    --CyanBackGround: #042331;
+    --LightBlue: #083e57;
     
-    
+    --purpkle: rgb(21, 4, 74);
 }
 
 .container_1{
@@ -17,9 +20,7 @@
     margin: auto;
     box-shadow: 0 0 5px 5px rgba(0,0,0,0.3);
 
-
-
-
+    
     width:  750px;
     height: 900px;;
 }
@@ -48,9 +49,9 @@
     
     border: 0px;
 
-
     line-height: 5vh;
     height: 5vh;
+
 
     
     font-size: 40px;
@@ -58,13 +59,10 @@
     padding-left: 0.5vw;
 }
 
-.container_1  form .form{
+.container_1  form{
     margin-left: 2.5vw;
     margin-right: 2.5vw;
 
-    height: 100%;
-
-    display: block;
     font-size: 30px;
     padding-top: 10%;
 }
