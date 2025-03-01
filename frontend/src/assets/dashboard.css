@@ -1,65 +1,130 @@
+.dashboard-header {
+    height: 6vh;
 
-.dashboard-header{
-    height: 3vh;
-    height: auto;
-    background: linear-gradient(to bottom right, rgb(0, 200, 255), rgb(0, 140, 255));
+    width: 100vw;
+    display: block;
+    background: linear-gradient(
+        to bottom right,
+        rgb(0, 200, 255),
+        rgb(0, 140, 255)
+    );
 }
 
 .dashboard-header *{
-    display: inline;
-    width: 100vw;
+    display: inline-block;
 }
 
-.dashboard-header img{
-    width: 64px;
+.dashboard-right{
+    width: 100%;
 }
 
-.dashboard-page{
+.dashboard-header .options{
+    float: right;
+    height: 100%;
+    width: 50%;
+
+}
+
+.options span:first-child{
+    border-left: 2px solid white;
+}
+
+.dashboard-header span {
+    color: white;
+    font-size: 1vw ;
+
+    border-right: 2px solid white;
+    padding: 2%;
+
+    float: right;
+    width: auto;
+    
+    user-select: none;
+
+    transition: 500ms all;
+}
+
+.dashboard-header span:last-child{
+    border-left: 2px solid white;
+}
+
+.dashboard-header span:hover{
+    background-color: white;
+    color: var(--PowercraftColor)
+}
+
+.dashboard-header img {
+    width: 5vh;
+    height: 6vh;
+}
+
+.dashboard-page {
     display: flex;
     height: 100vh;
 }
 
-.dashboard-right{
-    flex-grow: 1;
-}
-
-.dashboard-container{
+.dashboard-container {
     border: 1px grey solid;
     padding: 5%;
-    height: 100%;
+    height: 100vh;
 }
 
-.dashboard-content{
+.dashboard-content {
     border: 1px solid grey;
-    height: 80%;
+    height: 100vh;   
 }
 
+.server_list {
+    display: flex;
+    flex-wrap: wrap;    
+    align-content: flex-start;
+    gap: 1vw;
 
-.server_list{
+    padding: 2%;
+    height: 100%;    
+    
+
+    list-style-type: none;
     transition: 0.5s all ease;
-    width: 500px;
-    overflow-x: auto;
-    padding: 0;
 }
 
-.server_listing{
-    margin-top: 0.5%;
-    height: 100px;
-    background-color: var(--OpaicGrey);
+.server_listing, .create_server {
+    transition: 0.5s all ease;
+    width: 15vw;
+    height: 3vw;
+
+    background: var(--OpaicGrey);
+    border: 2px var(--OpaicGrey) solid ;
+    border-radius: 5px;
+    
+    padding: 2%;
+    font-size: 1vw;
 }
 
-.server_listing img{
+.create_server{
+    text-align: center;
+    line-height: 5vh;
+}
+
+.server_listing:hover, .create_server:hover{
+    transform: scale(1.1);
+}
+
+.server_listing img {
     float: right;
     height: 100%;
 }
 
-.create_server{
-    background-color: var(--OpaicGrey);
-    height: 150px;
-    text-align: center;
-}
+@media (max-width: 900px){
+    .create_server, .server_listing{
+        width: 35vw;
+        height: 10vh;
 
-.server_listing, .create_server{
-    padding: 2%;
+        font-size: 3vw;
+    }
 
+    .server_listing img{
+        height: 15vw;
+        width: 15vw;
+    }
 }

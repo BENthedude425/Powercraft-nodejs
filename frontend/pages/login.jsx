@@ -29,7 +29,7 @@ export default function Plogin() {
         <div className="page" style={{ display: "flex" }}>
             <div className="container_1">
                 <div className="container_header">
-                    <div style={{ display: "inline" }}>
+                    <div>
                         <span>Login to powercraft</span>
                     </div>
 

@@ -1,16 +1,16 @@
-.option-grid{
+.option-grid {
     margin-top: 50px;
     margin-left: 100px;
     display: grid;
     grid-template-columns: 550px 550px 550px;
 }
 
-.item{
+.item {
     font-size: 25px;
     float: right;
 }
 
-.wrapper{
+.wrapper {
     font-size: 25px;
     display: inline;
     border: 1px solid black;
@@ -19,11 +19,44 @@
     box-sizing: border-box;
 }
 
-.wrapper2{
+.wrapper2 {
     font-size: 25px;
     display: inline;
     border: 1px solid red;
     padding: 2%;
     width: 500px;
     box-sizing: border-box;
+}
+
+.create_server_form {
+    background-color: var(--OpaicGrey);
+
+    padding: 2%;
+
+    height: 100vh;
+}
+
+.container_header2 {
+    display: flex;
+    flex-direction: column;
+
+    height: fit-content;
+    width: 20vw;
+}
+
+.input_wrapper label {
+    background: var(--PowercraftColorGradient);
+
+    height: 3vh;
+    line-height: 3vh;
+    font-size: 0.8vw;
+    padding: 1%;
+
+    color: white;
+    text-align: center;
+}
+
+.input_wrapper input {
+    border: 1px solid black;
+    height: 2vh;
 }

@@ -10,18 +10,6 @@ export default function PServerProperties() {
     const splitURL = window.location.href.split("/");
     const serverID = splitURL[splitURL.length - 1];
 
-    const [xr, y] = useState([""]);
-
-    useEffect(() => {
-        fetch(`${APIADDR}/api/get-server-properties/${serverID}`, {
-            credentials: "include",
-        }).then((response) => {
-            response.json().then((responseText) => {
-                y(responseText);
-            });
-        });
-    }, []);
-
     return (
         <div>
             <Header />

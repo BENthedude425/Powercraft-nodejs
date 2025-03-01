@@ -19,7 +19,7 @@ var DATABASECONNECTION;
 var DATABASECONFIGS;
 var FILEPATHS;
 
-const DEVMODE = false;
+const DEVMODE = true;
 const PORT = 8080;
 const FILEIDENT = "server.js";
 
@@ -674,6 +674,12 @@ app.post("/api/login", async (req, res) => {
 app.get("/api/authenticate/*", async (req, res) => {
     const splitURL = req.path.split("/");
     const token = splitURL[splitURL.length - 1];
+
+    console.log(token)
+    if(token == "undefined"){
+        res.json([false]);
+        return;
+    }
     const auth = await JWTCheck(token);
 
     res.json([auth]);

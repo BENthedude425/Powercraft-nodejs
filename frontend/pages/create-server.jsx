@@ -4,6 +4,7 @@ import Header from "../src/components/CHeader";
 import GetAPIAddr from "../src/assets/getAPIAddr";
 import ServerProperties from "../src/components/CServerProperties";
 import "../src/assets/create-server.css";
+import "../src/assets/dashboard.css";
 
 import DEFAULTSERVERIMAGE from "../public/pic1.png";
 
@@ -38,14 +39,16 @@ export default function PCreateServer() {
     }
 
     function handleVersionChange(event) {
-        const launcherTypeSelectDOM = document.getElementById("launcherTypeSelect");
-        const forgeReleaseSelectDOM = document.getElementById("forgeReleaseSelect");
+        const launcherTypeSelectDOM =
+            document.getElementById("launcherTypeSelect");
+        const forgeReleaseSelectDOM =
+            document.getElementById("forgeReleaseSelect");
         const type = launcherTypeSelectDOM.value;
         const version = event.target.value;
-
+        alert(type);
         if (type != "Forge") {
             forgeReleaseSelectDOM.style.visibility = "hidden";
-            alert("hidden")
+            alert("hidden");
             return;
         }
 
@@ -54,9 +57,81 @@ export default function PCreateServer() {
     }
 
     return (
+        <div className="dashboard-page">
+            <div className="dashboard-right">
+                <Header />
+
+                <form
+                    action={`${APIADDR}/api/create-server`}
+                    method="POST"
+                    encType="multipart/form-data"
+                    className="create_server_form"
+                >
+                    <input
+                        type="text"
+                        name="server_name"
+                        placeholder="server name"
+                    />
+
+                    <img
+                        src={serverIMGSrc}
+                        style={{ width: "300px", height: "300px" }}
+                        alt="preview image"
+                    />
+                    <input
+                        type="file"
+                        name="server_img"
+                        onChange={onImageChange}
+                    />
+
+                    <select
+                        name="launcherTypeSelect"
+                        id="launcherTypeSelect"
+                        onChange={handleLauncherChange}
+                    >
+                        {Object.keys(serverVersionsData).map((launcherType) => {
+                            return (
+                                <option key={launcherType}>
+                                    {launcherType}
+                                </option>
+                            );
+                        })}
+                    </select>
+
+                    <select
+                        name="versionSelect"
+                        id="versionSelect"
+                        onChange={handleVersionChange}
+                    >
+                        {launcherVersions.map((version) => {
+                            return <option key={version}>{version}</option>;
+                        })}
+                    </select>
+
+                    <select
+                        name="forgeReleaseSelect"
+                        id="forgeReleaseSelect"
+                        style={{ visibility: "Hidden" }}
+                    >
+                        {forgeReleases.map((release) => {
+                            return <option>{release.file}</option>;
+                        })}
+                    </select>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+function temp() {
+    return (
         <div>
             <Header />
-            <form action={`${APIADDR}/api/create-server`} method="POST" encType="multipart/form-data">
+            <form
+                action={`${APIADDR}/api/create-server`}
+                method="POST"
+                encType="multipart/form-data"
+            >
                 <input
                     type="text"
                     name="server_name"
@@ -76,7 +151,9 @@ export default function PCreateServer() {
                     onChange={handleLauncherChange}
                 >
                     {Object.keys(serverVersionsData).map((launcherType) => {
-                        return <option key={launcherType}>{launcherType}</option>;
+                        return (
+                            <option key={launcherType}>{launcherType}</option>
+                        );
                     })}
                 </select>
 
@@ -96,7 +173,7 @@ export default function PCreateServer() {
                     style={{ visibility: "Hidden" }}
                 >
                     {forgeReleases.map((release) => {
-                        return <option >{release.file}</option>;
+                        return <option>{release.file}</option>;
                     })}
                 </select>
 

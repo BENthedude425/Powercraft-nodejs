@@ -1,0 +1,15 @@
+h1{
+    color: white;
+    background: var(--PowercraftColorGradient);
+
+    font-size: 3vw;
+}
+
+u{
+    font-size: 2vw;
+}
+
+u:hover{
+    background-color: black;
+    color: white
+}
