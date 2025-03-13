@@ -1,0 +1,79 @@
+.flexbox {
+    display: flex;
+    flex-direction: row;
+    padding: 0.5vw;
+}
+
+.server_terminal {
+    background-color: black;
+    color: white;
+
+    width: 1500px;
+    height: 800px;
+
+    display: block;
+
+    overflow-y: scroll;
+    overflow-x: wrap;
+
+    padding: 0.5%;
+}
+::-webkit-scrollbar {
+    display:none;
+}
+
+.server_terminal_input {
+    border: none;
+    border-top: 1px white solid;
+
+    width: 1500px;
+
+    background-color: grey;
+    color: white;
+
+    font-size: 15px;
+}
+
+.terminal_text:hover {
+    background-color: yellow;
+    color: purple;
+}
+
+.control_panel {
+    display: inline;
+
+    padding: 1%;
+}
+
+.control_panel button {
+    width: 4vw;
+    height: 2vh;
+
+    font-size: 15px;
+    color: white;
+}
+
+.start_button {
+    border: 1px solid rgb(0, 205, 0);
+    background-color: rgb(10, 245, 10);
+}
+
+.restart_button {
+    border: 1px solid #c3830c;
+    background-color: #ffa500;
+    width: 2vw;
+    border-radius: 7px;
+}
+
+.stop_button {
+    border: 1px solid #b60202;
+    background-color: #ff0000;
+
+    width: 2vw;
+    border-radius: 7px;
+}
+
+button{
+    width: 2vw;
+    border-radius: 7px;
+}

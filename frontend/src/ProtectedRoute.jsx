@@ -1,20 +1,24 @@
-import { React, useState, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-import CheckAuth from "./CheckAuth";
+import { React, useState, useEffect } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
+import CheckAuth from './CheckAuth'
 
 export const ProtectedRoute = () => {
-    const [DOM, setDOM] = useState(<></>);
-    const navigate = useNavigate();
+  const [DOM, setDOM] = useState(<></>)
+  const navigate = useNavigate()
 
-    useEffect(() => {
-        CheckAuth().then(function (auth) {
-            if (!auth) {
-                navigate("/login");
-            }
+  useEffect(() => {
+    CheckAuth().then(function (auth) {
+      if (typeof auth == Object) {
+        auth = auth[0]
+      }
 
-            setDOM(<Outlet />);
-        });
-    }, []);
+      if (!auth) {
+        navigate('/login')
+      }
 
-    return DOM;
-};
+      setDOM(<Outlet />)
+    })
+  }, [])
+
+  return DOM
+}
