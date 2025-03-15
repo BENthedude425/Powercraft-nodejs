@@ -12,7 +12,7 @@ export default function ServerProperties(props) {
     if(props.serverID != null){
         URL += `/${props.serverID}`
     }
-
+    console.log(URL)
 
     useEffect(() => {
         fetch(URL, {
@@ -20,6 +20,7 @@ export default function ServerProperties(props) {
         }).then((response) => {
             response.json().then((responseJSON) => {
                 setServerProperties(responseJSON);
+                console.log(responseJSON)
             });
         });
     }, []);

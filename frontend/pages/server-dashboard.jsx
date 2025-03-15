@@ -1,190 +1,222 @@
-import { React, useEffect, useState } from 'react'
-import '../src/assets/server-dashboard.css'
+import { React, useEffect, useState } from "react";
+import "../src/assets/server-dashboard.css";
 
-import Header from '../src/components/CHeader'
-import GetAPIAddr from '../src/assets/getAPIAddr'
-import { DryCleaning } from '@mui/icons-material'
+import Header from "../src/components/CHeader";
+import GetAPIAddr from "../src/assets/getAPIAddr";
 
-const APIADDR = GetAPIAddr()
-let serverID = window.location.href.split('/')
-serverID = serverID[serverID.length - 1]
+const APIADDR = GetAPIAddr();
+let serverID = window.location.href.split("/");
+serverID = serverID[serverID.length - 1];
 
-function SendControl (action) {
-  const terminalInputDOM = document.getElementById('server-terminal-input')
-  const input = terminalInputDOM.value
+function SendControl(action) {
+    const terminalInputDOM = document.getElementById("server-terminal-input");
+    const input = terminalInputDOM.value;
 
-  if (action == 'input') {
-    fetch(`${APIADDR}/api/input-server-terminal/${input}/${serverID}`, {
-      credentials: 'include'
-    }).then(response => {
-      response.json().then(responseJSON => {
-        if (responseJSON[0] != 'success') {
-          alert(responseJSON[1])
-          return
-        }
-        terminalInputDOM.value = ''
-      })
-    })
-    return
-  }
+    if (action == "input") {
+        fetch(`${APIADDR}/api/input-server-terminal/${input}/${serverID}`, {
+            credentials: "include",
+        }).then((response) => {
+            response.json().then((responseJSON) => {
+                if (responseJSON[0] != "success") {
+                    alert(responseJSON[1]);
+                    return;
+                }
+                terminalInputDOM.value = "";
+            });
+        });
+        return;
+    }
 
-  fetch(`${APIADDR}/api/set-server-control/${action}/${serverID}`, {
-    credentials: 'include'
-  }).then(response => {
-    response.json().then(responseJSON => {
-      if (responseJSON[0] != 'success') {
-        alert(responseJSON[1])
-        return
-      }
-    })
-  })
+    fetch(`${APIADDR}/api/set-server-control/${action}/${serverID}`, {
+        credentials: "include",
+    }).then((response) => {
+        response.json().then((responseJSON) => {
+            if (responseJSON[0] != "success") {
+                alert(responseJSON[1]);
+                return;
+            }
+        });
+    });
 }
 
-function ControlPanel () {
-  return (
-    <>
-      <button
-        className='start_button'
-        onClick={() => {
-          SendControl('start')
-        }}
-      >
-        Start
-      </button>
-
-      <button
-        className='restart_button'
-        onClick={() => {
-          SendControl('restart')
-        }}
-      >
-        Restart
-      </button>
-
-      <button
-        className='stop_button'
-        onClick={() => {
-          SendControl('stop')
-        }}
-      >
-        Stop
-      </button>
-    </>
-  )
-}
-
-export default function PServerDashboard () {
-  const [terminalData, setTerminalData] = useState('')
-
-  const [serverData, setServerData] = useState('Loading data')
-  const [controlPanelDOM, setControlPanelDOM] = useState(<ControlPanel />)
-
-  useEffect(() => {
-    LongPollTerminal(0)
-
-    fetch(`${APIADDR}/api/get-server-data/${serverID}`, {
-      credentials: 'include'
-    }).then(response => {
-      response.text().then(responseText => {
-        setServerData(responseText)
-      })
-    })
-  }, [])
-
-  function LongPollTerminal (terminalLines) {
-    fetch(`${APIADDR}/api/get-server-terminal/${terminalLines}/${serverID}`, {
-      credentials: 'include'
-    }).then(response => {
-      response.json().then(responseJSON => {
-        setTerminalData(responseJSON[1].join('\n'))
-
-        LongPollTerminal(responseJSON[0])
-      })
-    })
-  }
-
-  function Terminal () {
+function ControlPanel() {
     return (
-      <div id='server-terminal' className='server_terminal'>
-        {terminalData.split('\n').map(string => {
-          keyID++
+        <div className="control_panel">
+            <button
+                className="start_button"
+                onClick={() => {
+                    SendControl("start");
+                }}
+            >
+                Start
+            </button>
 
-          return (
-            <TerminalText
-              terminalData={terminalData}
-              string={string}
-              key={keyID}
-            />
-          )
-        })}
-      </div>
-    )
-  }
+            <button
+                className="restart_button"
+                onClick={() => {
+                    SendControl("restart");
+                }}
+            >
+                Restart
+            </button>
 
-  useEffect(() => {
-    console.log(
-      'scroll heigh', document.getElementById('server-terminal').scrollHeight)
-    document.getElementById('server-terminal').scrollTop =
-      document.getElementById('server-terminal').scrollHeight
-  })
-
-  // Create a 'unique key' to keep react happy and smiling.
-  // React can really get on my nerves...
-
-  let keyID = 0
-
-  return (
-    <>
-      <Header />
-
-      <Terminal />
-
-      <input
-        className='server_terminal_input'
-        id='server-terminal-input'
-        onKeyDown={event => {
-          if (event.key == 'Enter') {
-            SendControl('input')
-          }
-        }}
-        spellCheck='false'
-        type='text'
-      />
-      <div className='control_panel'>{controlPanelDOM}</div>
-      {serverData}
-
-      <button
-        onClick={() => {
-          const splitURL = window.location.href.split('/')
-          const serverID = splitURL[splitURL.length - 1]
-
-          window.location = `../server-properties/${serverID}`
-        }}
-      >
-        Edit server properties
-      </button>
-
-      <button
-        onClick={() => {
-          console.log(document.getElementById('server-terminal').scrollHeight)
-          document.getElementById('server-terminal').scrollTop = document.getElementById('server-terminal').scrollHeight
-        }}
-      >
-        serverTerminalDOM.scrollTop = serverTerminalDOM.scrollHeight;
-      </button>
-    </>
-  )
+            <button
+                className="stop_button"
+                onClick={() => {
+                    SendControl("stop");
+                }}
+            >
+                Stop
+            </button>
+        </div>
+    );
 }
 
-function TerminalText (props) {
-  if (props.terminalData == '') {
-    return
-  }
+export default function PServerDashboard() {
+    const [terminalData, setTerminalData] = useState("");
 
-  return (
-    <a className='terminal_text'>
-      {props.string}
-      <br />
-    </a>
-  )
+    const [serverData, setServerData] = useState({ Loading: "data" });
+    const [controlPanelDOM, setControlPanelDOM] = useState(<ControlPanel />);
+
+    let keyID = 0;
+
+    useEffect(() => {
+        LongPollTerminal(0);
+        LongPollServerData(0);
+    }, []);
+
+    // Make the server terminal scroll to bottom on update
+    useEffect(() => {
+        document.getElementById("server-terminal").scrollTop =
+            document.getElementById("server-terminal").scrollHeight;
+    });
+
+    function LongPollTerminal(terminalLines) {
+        fetch(
+            `${APIADDR}/api/get-server-terminal/${terminalLines}/${serverID}`,
+            {
+                credentials: "include",
+            }
+        ).then((response) => {
+            response.json().then((responseJSON) => {
+                setTerminalData(responseJSON[1].join("\n"));
+
+                LongPollTerminal(responseJSON[0]);
+            });
+        });
+    }
+
+    function LongPollServerData(checkSum) {
+        fetch(`${APIADDR}/api/LP-get-server-data/${checkSum}/${serverID}`, {
+            credentials: "include",
+        }).then((response) => {
+            response.json().then((responseJSON) => {
+                setServerData(responseJSON[1]);
+                LongPollServerData(responseJSON[0]);
+            });
+        });
+    }
+
+    function Terminal() {
+        return (
+            <div id="server-terminal" className="server_terminal">
+                {terminalData.split("\n").map((string) => {
+                    keyID++;
+
+                    return (
+                        <TerminalText
+                            terminalData={terminalData}
+                            string={string}
+                            key={keyID}
+                        />
+                    );
+                })}
+            </div>
+        );
+    }
+    // Takes the server data object and returns formatted data
+    function Panel(props) {
+        return (
+            <div className="panel">
+<span className="status_light"></span>
+                {Object.keys(props.serverData).map((key) => {
+                    // Choose which keys to ignore
+                    switch (key) {
+                        case "server_executable_path":
+                            return;
+                        case "server_icon_path":
+                            return;
+                    }
+
+                    return PanelLabel(key, props.serverData[key]);
+                })}
+
+                {controlPanelDOM}
+
+            </div>
+        );
+    }
+
+    function PanelLabel(key, value) {
+        if (value == null) {
+            return;
+        }
+        return (
+            <div key={key}>
+                {key} <b>{value}</b>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <Header />
+
+            <div className="flexbox">
+                <Terminal />
+
+                <Panel serverData={serverData} />
+            </div>
+        </>
+    );
+}
+
+function x() {
+    <div className="row2">
+        <input
+            className="server_terminal_input"
+            id="server-terminal-input"
+            onKeyDown={(event) => {
+                if (event.key == "Enter") {
+                    SendControl("input");
+                }
+            }}
+            spellCheck="false"
+            type="text"
+        />
+
+        <button
+            onClick={() => {
+                const splitURL = window.location.href.split("/");
+                const serverID = splitURL[splitURL.length - 1];
+
+                window.location = `../server-properties/${serverID}`;
+            }}
+        >
+            Edit server properties
+        </button>
+    </div>;
+}
+
+function TerminalText(props) {
+    if (props.terminalData == "") {
+        return;
+    }
+
+    return (
+        <a className="terminal_text">
+            {props.string}
+            <br />
+        </a>
+    );
 }

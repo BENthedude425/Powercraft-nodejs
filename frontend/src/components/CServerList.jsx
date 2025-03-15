@@ -45,9 +45,9 @@ function CreateServerButton() {
 }
 
 function ServerList() {
-    function LongPollServerList(currentHash) {
+    function LongPollServerList(checkSum) {
         // Collect server data to populate the server list
-        fetch(`${APIADDR}/api/get-all-servers/${currentHash}`, {
+        fetch(`${APIADDR}/api/get-all-servers/${checkSum}`, {
             credentials: "include",
         }).then((response) => {
             response.json().then((responseJSON) => {
