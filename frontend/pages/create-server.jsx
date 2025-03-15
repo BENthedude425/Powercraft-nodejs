@@ -117,6 +117,12 @@ export default function PCreateServer() {
                             return <option>{release.file}</option>;
                         })}
                     </select>
+
+                    <div className="option-grid">
+                        <ServerProperties />
+                    </div>
+
+                    <input type="submit" />
                 </form>
             </div>
         </div>
@@ -176,10 +182,6 @@ function temp() {
                         return <option>{release.file}</option>;
                     })}
                 </select>
-
-                <div className="option-grid">
-                    <ServerProperties />
-                </div>
 
                 <input type="submit" />
             </form>

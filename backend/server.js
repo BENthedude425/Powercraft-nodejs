@@ -14,6 +14,7 @@ const { Setup, CreateRootUser } = require('./setup')
 const { readFileSync, writeFileSync } = require('fs')
 const { exec } = require('child_process')
 const md5 = require('md5')
+const { rejects } = require('assert')
 
 var DATABASECONNECTION
 var DATABASECONFIGS
@@ -329,7 +330,7 @@ async function CreateServer (serverSettings, properties) {
 
   // Create the terminal log file
   // Change this to a buffer and only store on shutdown or periodically
-  await fs.writeFileSync(terminalPath, '')
+  await fs.writeFileSync(terminalPath, 'Terminal is empty')
 
   // Agree to the eula
   await fs.writeFileSync(eulaPath, 'eula=true')
@@ -659,7 +660,7 @@ app.get('/api/authenticate/*', async (req, res) => {
     res.json([false])
     return
   }
-  
+
   const auth = await JWTCheck(token)
 
   res.json([auth])
@@ -811,9 +812,11 @@ app.get('/api/get-server-data/*', async (req, res) => {
       return
     }
 
-    res.send(results)
+    res.json(results[0])
   })
 })
+
+// SET LONG POLL TIME OUT
 
 // Long poll
 app.get('/api/get-server-terminal*', async (req, res) => {
@@ -864,7 +867,7 @@ app.get('/api/get-all-servers/*', async (req, res) => {
     return
   }
 
-  // Get the hash
+  // Get the current checksum
   const hash = req.path.slice(req.path.lastIndexOf('/') + 1)
 
   var timer = setInterval(async () => {
@@ -882,6 +885,45 @@ app.get('/api/get-all-servers/*', async (req, res) => {
 
     if (hash != newHash || res.closed) {
       res.json([newHash, results])
+      clearInterval(timer)
+    }
+  }, 250)
+})
+
+// Long poll
+
+app.get('/api/LP-get-server-data/*', async (req, res) => {
+  // PATH = /api/LP-get-server-data/SERVERID/CHECKSUM
+
+  // Check that the user is JWT authenticated
+  const token = GetCookie(req, 'auth_token')
+  const auth = await JWTCheck(token)
+
+  if (!auth) {
+    res.json(['Failed to authenticate!'])
+    return
+  }
+
+  let splitPath = req.path.split('/')
+  const checkSum = splitPath[splitPath.length - 2]
+  const serverID = splitPath[splitPath.length - 1]
+
+  const SQLquery = `SELECT * FROM servers WHERE ID = ?`
+
+  var timer = setInterval(async () => {
+    const results = await new Promise((resolve, reject) => {
+      DATABASECONNECTION.query(SQLquery, [serverID], (error, results) => {
+        if (error != null) {
+          reject(error)
+        }
+
+        resolve(results[0])
+      })
+    })
+    const newCheckSum = md5(JSON.stringify(results))
+
+    if (checkSum != newCheckSum || res.closed) {
+      res.json([newCheckSum, results])
       clearInterval(timer)
     }
   }, 250)

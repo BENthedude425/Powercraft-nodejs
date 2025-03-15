@@ -1,17 +1,41 @@
 .flexbox {
     display: flex;
     flex-direction: row;
+
+    gap: 2vw;
+
     padding: 0.5vw;
+}
+
+.panel{
+    width: 40vw;
+    padding: 1%;
+
+    color: var(--PowercraftColor);
+    font-size: 0.8vw;
+
+    background-color: var(--OpaicGrey);
+    border: 2px var(--OpaicGrey) solid ;
+    border-radius: 5px;
+}
+
+.panel b{
+    position: relative;
+    left: 15vw;
+}
+
+.panel div:nth-of-type(even){
+    background: var(--OpaicGrey)
 }
 
 .server_terminal {
     background-color: black;
     color: white;
 
-    width: 1500px;
-    height: 800px;
+    width: 50vw;
+    height: 60vh;
 
-    display: block;
+    display: inline-block;
 
     overflow-y: scroll;
     overflow-x: wrap;
@@ -19,14 +43,14 @@
     padding: 0.5%;
 }
 ::-webkit-scrollbar {
-    display:none;
+    display: none;
 }
 
 .server_terminal_input {
     border: none;
     border-top: 1px white solid;
 
-    width: 1500px;
+    width: 150px;
 
     background-color: grey;
     color: white;
@@ -34,15 +58,30 @@
     font-size: 15px;
 }
 
+.terminal_text {
+}
 .terminal_text:hover {
     background-color: yellow;
     color: purple;
 }
 
-.control_panel {
-    display: inline;
+.status_light{
+    position: absolute;
+    right: 5.5vw;
 
-    padding: 1%;
+    height: 25px;
+    width: 25px;
+
+    background-color: red;
+    border-radius: 50%;
+}
+
+.control_panel {
+    margin-top: 2vh;
+    height: 20%;
+
+
+    background-color: orange;
 }
 
 .control_panel button {
@@ -73,7 +112,7 @@
     border-radius: 7px;
 }
 
-button{
+button {
     width: 2vw;
     border-radius: 7px;
 }
