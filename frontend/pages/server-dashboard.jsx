@@ -3,6 +3,7 @@ import "../src/assets/server-dashboard.css";
 
 import Header from "../src/components/CHeader";
 import GetAPIAddr from "../src/assets/getAPIAddr";
+import GetStatusColor from "../src/components/CGetStatusColor";
 
 const APIADDR = GetAPIAddr();
 let serverID = window.location.href.split("/");
@@ -74,7 +75,7 @@ function ControlPanel() {
 
 export default function PServerDashboard() {
     const [terminalData, setTerminalData] = useState("");
-
+    const [serverStatusStyle, setServerStatus] = useState();
     const [serverData, setServerData] = useState({ Loading: "data" });
     const [controlPanelDOM, setControlPanelDOM] = useState(<ControlPanel />);
 
@@ -112,6 +113,10 @@ export default function PServerDashboard() {
         }).then((response) => {
             response.json().then((responseJSON) => {
                 setServerData(responseJSON[1]);
+
+                const style = GetStatusColor(responseJSON[1].server_status);
+                setServerStatus(style);
+
                 LongPollServerData(responseJSON[0]);
             });
         });
@@ -138,7 +143,7 @@ export default function PServerDashboard() {
     function Panel(props) {
         return (
             <div className="panel">
-<span className="status_light"></span>
+                <span className="status_light" style={serverStatusStyle}></span>
                 {Object.keys(props.serverData).map((key) => {
                     // Choose which keys to ignore
                     switch (key) {
@@ -146,13 +151,14 @@ export default function PServerDashboard() {
                             return;
                         case "server_icon_path":
                             return;
+                        case "ID":
+                            return;
                     }
 
                     return PanelLabel(key, props.serverData[key]);
                 })}
 
                 {controlPanelDOM}
-
             </div>
         );
     }
@@ -162,8 +168,8 @@ export default function PServerDashboard() {
             return;
         }
         return (
-            <div key={key}>
-                {key} <b>{value}</b>
+            <div className="panel_label" key={key}>
+                <span>{key}</span> <b>{value}</b>
             </div>
         );
     }
@@ -177,24 +183,34 @@ export default function PServerDashboard() {
 
                 <Panel serverData={serverData} />
             </div>
+            <input
+                className="server_terminal_input"
+                id="server-terminal-input"
+                onKeyDown={(event) => {
+                    if (event.key == "Enter") {
+                        SendControl("input");
+                    }
+                }}
+                spellCheck="false"
+                type="text"
+            />
+
+            <button
+                onClick={() => {
+                    const splitURL = window.location.href.split("/");
+                    const serverID = splitURL[splitURL.length - 1];
+
+                    window.location = `../server-properties/${serverID}`;
+                }}
+            >
+                Edit server properties
+            </button>
         </>
     );
 }
 
 function x() {
     <div className="row2">
-        <input
-            className="server_terminal_input"
-            id="server-terminal-input"
-            onKeyDown={(event) => {
-                if (event.key == "Enter") {
-                    SendControl("input");
-                }
-            }}
-            spellCheck="false"
-            type="text"
-        />
-
         <button
             onClick={() => {
                 const splitURL = window.location.href.split("/");

@@ -1,11 +1,14 @@
 import { React, useState, useEffect } from "react";
 
 import GetAPIAddr from "../assets/getAPIAddr";
+import GetStatusColor from "./CGetStatusColor";
 
 import "../assets/main.css";
 import "../assets/sidebar.css";
 
 function Server(props) {
+    const statusStyle = GetStatusColor(props.serverStatus)
+    
     return (
         <li
             className="server_listing"
@@ -13,15 +16,15 @@ function Server(props) {
                 Redirect(`server-dashboard/${props.serverID}`);
             }}
         >
+            <span className="status_light" style={statusStyle}></span>
             {props.serverName}
             <img src={props.serverImg} />
             <div>
                 <i>
-                    {props.serverLauncher} {props.serverVersion} 
+                    {props.serverLauncher} {props.serverVersion}
                 </i>
             </div>
 
-            
             {props.serverStatus}
         </li>
     );
@@ -70,7 +73,6 @@ function ServerList() {
             <CreateServerButton />
             {serverlistings.map((data) => {
                 const serverIMG = `${APIADDR}/images/${data.server_icon_path}`;
-
                 return (
                     <Server
                         key={data.ID}
@@ -87,4 +89,4 @@ function ServerList() {
     );
 }
 
-export default ServerList;
+export default ServerList

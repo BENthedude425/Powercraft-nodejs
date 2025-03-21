@@ -12,16 +12,20 @@
     padding: 1%;
 
     color: var(--PowercraftColor);
-    font-size: 0.8vw;
+    font-size: 1vw;
 
     background-color: var(--OpaicGrey);
     border: 2px var(--OpaicGrey) solid ;
     border-radius: 5px;
 }
 
+.panel_label span{
+    
+    display: block;
+}
+
 .panel b{
     position: relative;
-    left: 15vw;
 }
 
 .panel div:nth-of-type(even){
@@ -58,21 +62,19 @@
     font-size: 15px;
 }
 
-.terminal_text {
-}
 .terminal_text:hover {
     background-color: yellow;
     color: purple;
 }
 
 .status_light{
-    position: absolute;
-    right: 5.5vw;
+    float: left;
+    margin-right: 0.5vw;
 
     height: 25px;
     width: 25px;
 
-    background-color: red;
+    background-color: orange;
     border-radius: 50%;
 }
 
@@ -81,7 +83,7 @@
     height: 20%;
 
 
-    background-color: orange;
+    background-color: var(--);
 }
 
 .control_panel button {
@@ -115,4 +117,22 @@
 button {
     width: 2vw;
     border-radius: 7px;
+}
+
+
+@media (max-width: 900px){
+    .flexbox{
+        padding: 2vw;
+        flex-direction: column;
+    }
+
+    .server_terminal{
+        width: 99%;
+        font-size: 2vw;
+    }
+
+    .panel{
+        width: 97%;
+        font-size: 5vw;
+    }
 }

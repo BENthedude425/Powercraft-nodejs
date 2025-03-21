@@ -10,57 +10,47 @@
     );
 }
 
-.dashboard-header *{
+.dashboard-header * {
     display: inline-block;
 }
 
-.dashboard-right{
-    width: 100%;
-}
-
-.dashboard-header .options{
+.dashboard-header .options {
     float: right;
     height: 100%;
     width: 50%;
-
 }
 
-.options span:first-child{
+.options span:first-child {
     border-left: 2px solid white;
 }
 
 .dashboard-header span {
     color: white;
-    font-size: 1vw ;
+    font-size: 1vw;
 
     border-right: 2px solid white;
     padding: 2%;
 
     float: right;
     width: auto;
-    
+
     user-select: none;
 
     transition: 500ms all;
 }
 
-.dashboard-header span:last-child{
+.dashboard-header span:last-child {
     border-left: 2px solid white;
 }
 
-.dashboard-header span:hover{
+.dashboard-header span:hover {
     background-color: white;
-    color: var(--PowercraftColor)
+    color: var(--PowercraftColor);
 }
 
 .dashboard-header img {
     width: 5vh;
     height: 6vh;
-}
-
-.dashboard-page {
-    display: flex;
-    height: 100vh;
 }
 
 .dashboard-container {
@@ -71,42 +61,52 @@
 
 .dashboard-content {
     border: 1px solid grey;
-    height: 100vh;   
+    height: 100vh;
 }
 
 .server_list {
     display: flex;
-    flex-wrap: wrap;    
+    flex-wrap: wrap;
     align-content: flex-start;
     gap: 1vw;
 
     padding: 2%;
-    height: 100%;    
-    
+    height: 45vh;
+
+    overflow-y: scroll;
 
     list-style-type: none;
     transition: 0.5s all ease;
 }
 
-.server_listing, .create_server {
+.server_listing,
+.create_server {
     transition: 0.5s all ease;
     width: 15vw;
     height: 3vw;
 
     background: var(--OpaicGrey);
-    border: 2px var(--OpaicGrey) solid ;
+    border: 2px var(--OpaicGrey) solid;
     border-radius: 5px;
-    
+
     padding: 2%;
     font-size: 1vw;
+
+    overflow-x: wrap;
 }
 
-.create_server{
+.server_listing img {
+    width: 128px;
+    height: 128px;
+}
+
+.create_server {
     text-align: center;
     line-height: 5vh;
 }
 
-.server_listing:hover, .create_server:hover{
+.server_listing:hover,
+.create_server:hover {
     transform: scale(1.1);
 }
 
@@ -115,15 +115,42 @@
     height: 100%;
 }
 
-@media (max-width: 900px){
-    .create_server, .server_listing{
+.status_div {
+    display: flex;
+    gap: 5vw;
+    padding: 1vw;
+
+    height: 30vh;
+    border-bottom: 2px solid var(--OpaicGrey);
+}
+
+.stat_container {
+    height: 100%;
+    background-color: var(--OpaicGrey);
+}
+
+.stat_display {
+    flex-grow: 1;
+}
+
+.progress_circle {
+    transition: all 500ms;
+    transform: rotate(-90deg);
+    transform-origin: 125px 125px;
+    fill: rgba(0, 0, 0, 0.3);
+    stroke-width: 3;
+}
+
+@media (max-width: 900px) {
+    .create_server,
+    .server_listing {
         width: 35vw;
         height: 10vh;
 
         font-size: 3vw;
     }
 
-    .server_listing img{
+    .server_listing img {
         height: 15vw;
         width: 15vw;
     }
