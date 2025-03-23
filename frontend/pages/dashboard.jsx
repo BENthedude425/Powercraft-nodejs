@@ -11,19 +11,21 @@ export default function PDashboard() {
     // Hooks for progress circle text updates
     const [CPU_Text, SetCPUText] = useState("loading");
     const [Memory_Text, SetMemoryText] = useState("loading");
-    //const [Network_Text, SetNetworkText] = useState("loading");
-    //const [TPS_Text, SetTPSText] = useState("loading");
+    const [Disk_Text, SetDiskText] = useState("loading");
+    const [Player_Text, SetPlayerText] = useState("loading");
 
     const [CPU_Style, SetCPUStyle] = useState({});
     const [Memory_Style, SetMemoryStyle] = useState({});
+    const [Disk_Style, SetDiskStyle] = useState({});
+    const [Player_Style, SetPlayerStyle] = useState({});
 
     const initilised = useRef(false);
 
     // Setup progress cirlce variables
     var CPU_Circle = null;
     var MEMORY_Circle = null;
-    var NETWORK_Circle = null;
-    var TPS_Circle = null;
+    var Disk_Circle = null;
+    var Player_Circle = null;
 
     const APIADDR = GetAPIAddr();
 
@@ -78,51 +80,61 @@ export default function PDashboard() {
             2 * Math.PI * MEMORY_Circle.r.baseVal.value;
         MEMORY_Circle.style.strokeDasharray = `${MEMORY_Circle.circumference} ${MEMORY_Circle.circumference}`;
 
-        NETWORK_Circle = document.getElementById("NETWORK-USSAGE");
-        NETWORK_Circle.circumference =
-            2 * Math.PI * NETWORK_Circle.r.baseVal.value;
-        NETWORK_Circle.style.strokeDasharray = `${NETWORK_Circle.circumference} ${NETWORK_Circle.circumference}`;
+        Disk_Circle = document.getElementById("DISK-USSAGE");
+        Disk_Circle.circumference = 2 * Math.PI * Disk_Circle.r.baseVal.value;
+        Disk_Circle.style.strokeDasharray = `${Disk_Circle.circumference} ${Disk_Circle.circumference}`;
 
         // maybe change to total players over all servers
-        TPS_Circle = document.getElementById("TPS");
-        TPS_Circle.circumference = 2 * Math.PI * TPS_Circle.r.baseVal.value;
-        TPS_Circle.style.strokeDasharray = `${TPS_Circle.circumference} ${TPS_Circle.circumference}`;
+        Player_Circle = document.getElementById("Players");
+        Player_Circle.circumference = 2 * Math.PI * Player_Circle.r.baseVal.value;
+        Player_Circle.style.strokeDasharray = `${Player_Circle.circumference} ${Player_Circle.circumference}`;
 
-        GetResources();
+        setInterval(() => {
+            GetResources();
+        }, 1000);
     }
 
     function GetStyle(circle, progress) {
         var color = "green";
 
-        if(progress >= 60){
-            color = "orange"
+        if (progress >= 60) {
+            color = "orange";
         }
 
-        if(progress >= 95){
-            color = "red"
+        if (progress >= 95) {
+            color = "red";
         }
 
         const offset = (progress / 100) * circle.circumference;
         const empty = circle.circumference - offset;
 
-        return {strokeDasharray: `${offset} ${empty}`, stroke:color}
+        return { strokeDasharray: `${offset} ${empty}`, stroke: color };
     }
 
     function GetResources() {
         fetch(`${APIADDR}/api/get-resources`, { credentials: "include" }).then(
             (response) => {
                 response.json().then((responseJSON) => {
-                    // useState hooks
+                    // useState hooks to set the text
                     SetCPUText(`${responseJSON.cpu}%`);
                     SetMemoryText(
                         `${responseJSON.memory.freemem}GB / ${responseJSON.memory.totalmem}GB`
                     );
+                    SetDiskText(`${responseJSON.disk.free}GB / ${responseJSON.disk.total}GB`)
+                    SetPlayerText(`${responseJSON.players.current} / ${responseJSON.players.total}`)
 
                     // Set the progression of the circle
-                    SetCPUStyle(GetStyle(CPU_Circle, responseJSON.cpu))
-                    SetMemoryStyle(GetStyle(MEMORY_Circle, (responseJSON.memory.freemem / responseJSON.memory.totalmem) * 100))
-
-                    GetResources();
+                    SetCPUStyle(GetStyle(CPU_Circle, responseJSON.cpu));
+                    SetMemoryStyle(
+                        GetStyle(
+                            MEMORY_Circle,
+                            (responseJSON.memory.freemem /
+                                responseJSON.memory.totalmem) *
+                                100
+                        )
+                    );
+                    SetDiskStyle(GetStyle(Disk_Circle, (responseJSON.disk.free / responseJSON.disk.total) * 100));
+                    SetPlayerStyle(GetStyle(Player_Circle, responseJSON.players))
                 });
             }
         );
@@ -133,7 +145,12 @@ export default function PDashboard() {
             <Header />
 
             <div className="status_div">
-                <ProgressCircle id="CPU-USSAGE" name="cpu" text={CPU_Text} strokeStyle={CPU_Style}/>
+                <ProgressCircle
+                    id="CPU-USSAGE"
+                    name="cpu"
+                    text={CPU_Text}
+                    strokeStyle={CPU_Style}
+                />
 
                 <ProgressCircle
                     id="MEMORY-USSAGE"
@@ -142,11 +159,17 @@ export default function PDashboard() {
                     strokeStyle={Memory_Style}
                 />
                 <ProgressCircle
-                    id="NETWORK-USSAGE"
-                    name="memory"
-                    text={Memory_Text}
+                    id="DISK-USSAGE"
+                    name="Disk"
+                    text={Disk_Text}
+                    strokeStyle={Disk_Style}
                 />
-                <ProgressCircle id="TPS" name="memory" text={Memory_Text} />
+                <ProgressCircle
+                    id="Players"
+                    name="Player Count"
+                    text={Player_Text}
+                    strokeStyle={Player_Style}
+                />
             </div>
             <ServerList />
         </div>
