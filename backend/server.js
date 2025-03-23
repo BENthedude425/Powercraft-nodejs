@@ -4,6 +4,7 @@ const mysql2 = require("mysql2");
 const app = express();
 const os = require("os");
 const osUtils = require("os-utils");
+const diskCheck = require("diskusage");
 
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
@@ -16,6 +17,7 @@ const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
 const md5 = require("md5");
+const { Console } = require("console");
 
 var DATABASECONNECTION;
 var DATABASECONFIGS;
@@ -29,8 +31,10 @@ const FILEIDENT = "server.js";
 const FIXEDIPADDRESS = "http://test.powercraft.uk:81";
 //const FIXEDIPADDRESS = "http://192.168.0.62";
 
-// An object containing all of the running server processes
+// An object containing all of the running server processes using serverID's as keys
 const SERVERPROCESSES = {};
+// Keeps track of each servers player count using serverID's as keys
+const PLAYERCOUNTS = {};
 
 function GetExecutablePath(server) {
     switch (server.server_launcher_type) {
@@ -450,7 +454,7 @@ function ReturnRunCommand(server) {
 
     switch (fileExtension) {
         case ".jar":
-            return `cd ${serverPath} && java -jar ${server.server_executable_path} nogui`;
+            return `cd ${serverPath} && java -jar ${server.server_executable_path}`;
         default:
             return `cd ${serverPath} && ${server.server_executable_path}`;
     }
@@ -458,7 +462,6 @@ function ReturnRunCommand(server) {
 
 // Takes a server object and runs it
 function RunServer(server) {
-    const executableName = server.server_executable_path;
     const serverID = server.ID;
     const serverPath = GetServerPath(server.server_name);
 
@@ -466,9 +469,24 @@ function RunServer(server) {
 
     const command = ReturnRunCommand(server);
     var serverProcess = exec(command);
+    PLAYERCOUNTS[serverID] = {
+        current: 0,
+        total: 0,
+    };
 
     serverProcess.stdout.on("data", (data) => {
-        fs.appendFileSync(`${serverPath}/terminal.txt`, data);
+        if (data.includes("players online:")) {
+            var formattedData = data.split(":");
+            formattedData = formattedData[formattedData.length - 2];
+            formattedData = formattedData.split(" ");
+
+            PLAYERCOUNTS[serverID] = {
+                current: parseInt(formattedData[3]),
+                total: parseInt(formattedData[8]),
+            };
+        } else {
+            fs.appendFileSync(`${serverPath}/terminal.txt`, data);
+        }
     });
 
     serverProcess.stderr.on("data", (data) => {
@@ -965,26 +983,81 @@ function Round(number, decimals) {
     return result;
 }
 
+function ToGiga(number) {
+    return number / 1073741824;
+}
+
 app.get("/api/get-resources", async (req, res) => {
     // Format into GB
-    const freeMemory = Round(os.freemem() / 1073741824, 2);
-    const totalMemory = Round(os.totalmem() / 1073741824, 2);
+    const freeMemory = Round(ToGiga(os.freemem), 2);
+    const totalMemory = Round(ToGiga(os.totalmem()), 2);
     const Memory = { freemem: freeMemory, totalmem: totalMemory };
 
-    var cpu = await new Promise((resolve, reject) => {
+    var Cpu = await new Promise((resolve, reject) => {
         osUtils.cpuUsage((x) => {
             resolve(x * 100);
         });
     });
-    cpu = Round(cpu, 2);
+    Cpu = Round(Cpu, 2);
+
+    var Disk = await diskCheck.check("/");
+    Disk.total = Round(ToGiga(Disk.total), 2);
+    Disk.free = Round(ToGiga(Disk.free), 2);
+    Disk.availble = Round(ToGiga(Disk.available), 2);
+
+    const Players = await GetAllPlayers();
 
     Resources = {
-        cpu: cpu,
+        cpu: Cpu,
         memory: Memory,
+        disk: Disk,
+        players: Players,
     };
 
     res.json(Resources);
 });
+
+// Updates the server player count
+function GetPlayers(serverID) {
+    const serverProcess = SERVERPROCESSES[serverID];
+    serverProcess.stdin.write("list\n");
+    return PLAYERCOUNTS[serverID];
+}
+
+// Returns the total player count
+async function GetAllPlayers() {
+    return await new Promise((resolve, reject) => {
+        var playerCount = {
+            current: 0,
+            total: 0,
+        };
+        DATABASECONNECTION.query(
+            `SELECT * FROM servers WHERE server_status = 'Running'`,
+            (error, results) => {
+                if (error != null) {
+                    console.log(error);
+                }
+
+                results.forEach((result) => {
+                    const count = GetPlayers(result.ID);
+                    playerCount.current += count.current;
+                    playerCount.total += count.total;
+                });
+
+                // If no servers are running
+                if (
+                    playerCount.current == undefined ||
+                    playerCount.total == undefined
+                ) {
+                    playerCount.current = 0;
+                    playerCount.total = 0;
+                }
+
+                resolve(playerCount);
+            }
+        );
+    });
+}
 
 // Returns true if the server is found
 function CheckServerIsRunning(serverID) {
