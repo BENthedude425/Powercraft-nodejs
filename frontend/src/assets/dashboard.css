@@ -116,30 +116,41 @@
 }
 
 .status_div {
-    display: flex;
-    gap: 5vw;
-    padding: 1vw;
+    display: grid;
+    gap: 1em;
+    grid-auto-columns: 250px;
+    grid-auto-rows: 250px;
 
-    height: 30vh;
-    border-bottom: 2px solid var(--OpaicGrey);
+    grid-template-areas: 
+    "test1 test1 cpu memory"
+    "test2 test2 disk player_count";
+
+
+    background: var(--OpaicGrey);
 }
 
 .stat_container {
-    height: 100%;
-    background-color: var(--OpaicGrey);
+
+ 
 }
 
-.stat_display {
-    flex-grow: 1;
-}
 
 .progress_circle {
-    transition: all 500ms;
+    transition: 500ms;
     transform: rotate(-90deg);
     transform-origin: 125px 125px;
-    fill: rgba(0, 0, 0, 0.3);
-    stroke-width: 3;
+    fill: none;
+    stroke-width: 4;
 }
+
+.empty_circle{
+    fill: none;
+    stroke: white;
+    stroke-width: 4;
+}
+
+
+
 
 @media (max-width: 900px) {
     .create_server,
