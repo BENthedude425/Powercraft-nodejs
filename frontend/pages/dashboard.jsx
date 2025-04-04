@@ -3,10 +3,12 @@ import { React, useEffect, useState, useRef } from "react";
 import Header from "../src/components/CHeader";
 import ServerList from "../src/components/CServerList";
 import GetAPIAddr from "../src/assets/getAPIAddr";
+import Graph from "../src/components/CGraph";
+
 
 import "../src/assets/dashboard.css";
 import "../src/assets/main.css";
-var CPU_Text = "loading";
+
 export default function PDashboard() {
     // Hooks for progress circle text updates
     const [CPU_Text, SetCPUText] = useState("loading");
@@ -14,10 +16,13 @@ export default function PDashboard() {
     const [Disk_Text, SetDiskText] = useState("loading");
     const [Player_Text, SetPlayerText] = useState("loading");
 
+    // Hooks for updating the progression of the circle via styling
     const [CPU_Style, SetCPUStyle] = useState({});
     const [Memory_Style, SetMemoryStyle] = useState({});
     const [Disk_Style, SetDiskStyle] = useState({});
     const [Player_Style, SetPlayerStyle] = useState({});
+
+    const [CPUDATA, SETCPUDATA] = useState([]);
 
     const initilised = useRef(false);
 
@@ -44,25 +49,31 @@ export default function PDashboard() {
         }, []);
 
         return (
-            <div className="stat_display">
-                <div className="stat_container">
-                    <svg className="circle_svg" width={250} height={250}>
-                        <circle
-                            id={props.id}
-                            cx="125"
-                            cy="125"
-                            r="115"
-                            className="progress_circle"
-                            style={props.strokeStyle}
-                        />
-                    </svg>
+            <div className="stat_container">
+                <svg style={{ position: "absolute" }} width={250} height={250}>
+                    <circle
+                        cx="125"
+                        cy="125"
+                        r="115"
+                        className="empty_circle"
+                    />
 
-                    <div>
+                    <circle
+                        id={props.id}
+                        cx="125"
+                        cy="125"
+                        r="115"
+                        className="progress_circle"
+                        style={props.strokeStyle}
+                    />
+
+                    <text x="50%" y="50%" textAnchor="middle" fill="black">
                         {props.name}
-                        <br />
+                    </text>
+                    <text x="50%" y="60%" textAnchor="middle" fill="black">
                         {props.text}
-                    </div>
-                </div>
+                    </text>
+                </svg>
             </div>
         );
     }
@@ -86,7 +97,8 @@ export default function PDashboard() {
 
         // maybe change to total players over all servers
         Player_Circle = document.getElementById("Players");
-        Player_Circle.circumference = 2 * Math.PI * Player_Circle.r.baseVal.value;
+        Player_Circle.circumference =
+            2 * Math.PI * Player_Circle.r.baseVal.value;
         Player_Circle.style.strokeDasharray = `${Player_Circle.circumference} ${Player_Circle.circumference}`;
 
         setInterval(() => {
@@ -105,6 +117,10 @@ export default function PDashboard() {
             color = "red";
         }
 
+        if (progress == 0) {
+            color = "red";
+        }
+
         const offset = (progress / 100) * circle.circumference;
         const empty = circle.circumference - offset;
 
@@ -120,11 +136,17 @@ export default function PDashboard() {
                     SetMemoryText(
                         `${responseJSON.memory.freemem}GB / ${responseJSON.memory.totalmem}GB`
                     );
-                    SetDiskText(`${responseJSON.disk.free}GB / ${responseJSON.disk.total}GB`)
-                    SetPlayerText(`${responseJSON.players.current} / ${responseJSON.players.total}`)
+                    SetDiskText(
+                        `${responseJSON.disk.free}GB / ${responseJSON.disk.total}GB`
+                    );
+                    SetPlayerText(
+                        `${responseJSON.players.current} / ${responseJSON.players.total}`
+                    );
 
                     // Set the progression of the circle
                     SetCPUStyle(GetStyle(CPU_Circle, responseJSON.cpu));
+                    SETCPUDATA(AddGraphData(CPUDATA, {time: Date.now(), value: responseJSON.cpu}))
+
                     SetMemoryStyle(
                         GetStyle(
                             MEMORY_Circle,
@@ -133,8 +155,16 @@ export default function PDashboard() {
                                 100
                         )
                     );
-                    SetDiskStyle(GetStyle(Disk_Circle, (responseJSON.disk.free / responseJSON.disk.total) * 100));
-                    SetPlayerStyle(GetStyle(Player_Circle, responseJSON.players))
+                    SetDiskStyle(
+                        GetStyle(
+                            Disk_Circle,
+                            (responseJSON.disk.free / responseJSON.disk.total) *
+                                100
+                        )
+                    );
+                    SetPlayerStyle(
+                        GetStyle(Player_Circle, responseJSON.players)
+                    );
                 });
             }
         );
@@ -143,7 +173,6 @@ export default function PDashboard() {
     return (
         <div>
             <Header />
-
             <div className="status_div">
                 <ProgressCircle
                     id="CPU-USSAGE"
@@ -170,8 +199,36 @@ export default function PDashboard() {
                     text={Player_Text}
                     strokeStyle={Player_Style}
                 />
+                <div style={{ background: "red", gridArea: "test1" }}>
+                    TOTAL SERVERS
+                </div>
+
+                <div style={{ background: "green", gridArea: "test2" }}>
+                    TOTAL SERVERS RUNNING
+                </div>
             </div>
             <ServerList />
+            TOTAL SERVERS RUNNING
+            
+            <Graph graphData={CPUDATA} />
+            
+
+            <div style={{ height: "1000px" }}></div>
         </div>
     );
+}
+
+
+
+function AddGraphData(graphData, newData, limit=10){
+    graphData.push({
+        value: newData.value,
+        time: newData.time,
+    });
+
+    if (graphData.length > limit) {
+        graphData.shift();
+    }
+
+    return graphData
 }
