@@ -1,168 +1,69 @@
-.dashboard-header {
-    height: 6vh;
-
-    width: 100vw;
-    display: block;
-    background: linear-gradient(
-        to bottom right,
-        rgb(0, 200, 255),
-        rgb(0, 140, 255)
-    );
+.page {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-.dashboard-header * {
-    display: inline-block;
-}
-
-.dashboard-header .options {
-    float: right;
+.main{
+    display: flex;
+    flex-direction: row;
+    
+    width: 100%;
     height: 100%;
-    width: 50%;
-}
-
-.options span:first-child {
-    border-left: 2px solid white;
-}
-
-.dashboard-header span {
-    color: white;
-    font-size: 1vw;
-
-    border-right: 2px solid white;
-    padding: 2%;
-
-    float: right;
-    width: auto;
-
-    user-select: none;
-
-    transition: 500ms all;
-}
-
-.dashboard-header span:last-child {
-    border-left: 2px solid white;
-}
-
-.dashboard-header span:hover {
-    background-color: white;
-    color: var(--PowercraftColor);
-}
-
-.dashboard-header img {
-    width: 5vh;
-    height: 6vh;
 }
 
 .dashboard-container {
-    border: 1px grey solid;
-    padding: 5%;
-    height: 100vh;
-}
-
-.dashboard-content {
-    border: 1px solid grey;
-    height: 100vh;
-}
-
-.server_list {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 1vw;
-
-    padding: 2%;
-    height: 45vh;
-
-    overflow-y: scroll;
-
-    list-style-type: none;
-    transition: 0.5s all ease;
-}
-
-.server_listing,
-.create_server {
-    transition: 0.5s all ease;
-    width: 15vw;
-    height: 3vw;
-
-    background: var(--OpaicGrey);
-    border: 2px var(--OpaicGrey) solid;
-    border-radius: 5px;
-
-    padding: 2%;
-    font-size: 1vw;
-
-    overflow-x: wrap;
-}
-
-.server_listing img {
-    width: 128px;
-    height: 128px;
-}
-
-.create_server {
-    text-align: center;
-    line-height: 5vh;
-}
-
-.server_listing:hover,
-.create_server:hover {
-    transform: scale(1.1);
-}
-
-.server_listing img {
-    float: right;
+    display: block;
+    
+    width: 100%;
     height: 100%;
 }
 
-.status_div {
+.dashboard-heading{
+    margin: 0px;
+    border-bottom: 1px solid var(--PowercraftColor);
+    background-color: var(--OpaicGrey);
+}
+
+.server-list-container{
+    overflow-y: scroll;
+    height: 50vh;
+}
+
+.resource-grid{
     display: grid;
-    gap: 1em;
-    grid-auto-columns: 250px;
-    grid-auto-rows: 250px;
-
     grid-template-areas: 
-    "test1 test1 cpu memory"
-    "test2 test2 disk player_count";
+    "CPU MEMORY DISK PLAYERS"
+    "TEST1 TEST2 TEST3 PLAYERS"
+    ;
 
+    grid-column: auto;
+    grid-row: auto;
 
-    background: var(--OpaicGrey);
+    gap: 55px;
+    padding: 1%;
 }
 
-.stat_container {
-
- 
-}
-
-
-.progress_circle {
-    transition: 500ms;
-    transform: rotate(-90deg);
-    transform-origin: 125px 125px;
-    fill: none;
-    stroke-width: 4;
-}
-
-.empty_circle{
-    fill: none;
-    stroke: white;
-    stroke-width: 4;
-}
-
-
-
-
-@media (max-width: 900px) {
-    .create_server,
-    .server_listing {
-        width: 35vw;
-        height: 10vh;
-
-        font-size: 3vw;
+@media (max-width: 480px) {
+    /* smartphones, Android phones, landscape iPhone */
+    .header {
+        display: none;
     }
 
-    .server_listing img {
-        height: 15vw;
-        width: 15vw;
+    .dashboard-sidebar {
+        width: 501px;
+        background-color: red;
     }
+}
+@media (min-width: 600px) {
+    /* portrait tablets, portrait iPad, e-readers (Nook/Kindle), landscape 800x480 phones (Android) */
+}
+@media (min-width: 801px) {
+    /* tablet, landscape iPad, lo-res laptops ands desktops */
+}
+@media (min-width: 1025px) {
+    /* big landscape tablets, laptops, and desktops */
+}
+@media (min-width: 1281px) {
+    /* hi-res laptops and desktops */
 }

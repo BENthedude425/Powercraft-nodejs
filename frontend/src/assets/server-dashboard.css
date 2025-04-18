@@ -67,17 +67,6 @@
     color: purple;
 }
 
-.status_light{
-    float: left;
-    margin-right: 0.5vw;
-
-    height: 25px;
-    width: 25px;
-
-    background-color: orange;
-    border-radius: 50%;
-}
-
 .control_panel {
     margin-top: 2vh;
     height: 20%;

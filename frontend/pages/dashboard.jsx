@@ -5,7 +5,6 @@ import ServerList from "../src/components/CServerList";
 import GetAPIAddr from "../src/assets/getAPIAddr";
 import Graph from "../src/components/CGraph";
 
-
 import "../src/assets/dashboard.css";
 import "../src/assets/main.css";
 
@@ -145,7 +144,12 @@ export default function PDashboard() {
 
                     // Set the progression of the circle
                     SetCPUStyle(GetStyle(CPU_Circle, responseJSON.cpu));
-                    SETCPUDATA(AddGraphData(CPUDATA, {time: Date.now(), value: responseJSON.cpu}))
+                    SETCPUDATA(
+                        AddGraphData(CPUDATA, {
+                            time: Date.now(),
+                            value: responseJSON.cpu,
+                        })
+                    );
 
                     SetMemoryStyle(
                         GetStyle(
@@ -163,7 +167,7 @@ export default function PDashboard() {
                         )
                     );
                     SetPlayerStyle(
-                        GetStyle(Player_Circle, responseJSON.players)
+                        GetStyle(Player_Circle, (responseJSON.players.current / responseJSON.players.total) * 100)
                     );
                 });
             }
@@ -174,6 +178,7 @@ export default function PDashboard() {
         <div>
             <Header />
             <div className="status_div">
+            <Graph graphWidth="300" graphHeight="200" graphData={CPUDATA} />
                 <ProgressCircle
                     id="CPU-USSAGE"
                     name="cpu"
@@ -209,18 +214,13 @@ export default function PDashboard() {
             </div>
             <ServerList />
             TOTAL SERVERS RUNNING
-            
-            <Graph graphData={CPUDATA} />
-            
 
             <div style={{ height: "1000px" }}></div>
         </div>
     );
 }
 
-
-
-function AddGraphData(graphData, newData, limit=10){
+function AddGraphData(graphData, newData, limit = 10) {
     graphData.push({
         value: newData.value,
         time: newData.time,
@@ -230,5 +230,5 @@ function AddGraphData(graphData, newData, limit=10){
         graphData.shift();
     }
 
-    return graphData
+    return graphData;
 }

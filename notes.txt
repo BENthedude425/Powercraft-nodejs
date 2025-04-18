@@ -72,3 +72,144 @@ minecraft:single_biome_surface - A buffet world which the entire overworld consi
 buffet - Only for 1.15 or before. Same as default unless generator-settings is set.
 default_1_1 - Only for 1.15 or before. Same as default, but counted as a different world type.
 customized - Only for 1.15 or before. After 1.13, this value is no different than default, but in 1.12 and before, it could be used to create a completely custom world.
+
+
+
+
+
+
+dashboard page ideas
+
+RESOURCES 
+------------
+CPU
+MEMORY
+DISK
+PLAYERS
+UPTIME
+------------
+
+
+
+
+
+
+
+function DashBoardSideBar() {
+    const MOBILE = useMediaQuery("(max-width:  480px)");
+    const [SideBarStyle, SetSideBarStyle] = useState({});
+    const [IsSideBarOpen, SetIsSideBarOpen] = useState("false");
+
+    function OpenSideBar() {
+        if (IsSideBarOpen) {
+            SetSideBarStyle({
+                width: "0%",
+            });
+        } else {
+            SetSideBarStyle({
+                width: "75%",
+            });
+        }
+
+        SetIsSideBarOpen(!IsSideBarOpen);
+    }
+
+    useEffect(() => {
+        if (MOBILE) {
+            SetSideBarStyle({
+                width: "0%",
+            });
+        }
+    }, []);
+
+    return (
+        <div className="dashboard-sidebar" style={SideBarStyle}>
+            <div className="dashboard-sidebar-list">
+            </div>
+
+            <span className="sidebar-button" onClick={OpenSideBar}>
+                <img src="sidebar.png" />
+            </span>
+        </div>
+    );
+}
+
+export { DashBoardSideBar };
+
+
+
+
+
+    function InitProgressCircles() {
+        // c = 2 * PI * R
+        try {
+            // init all circles
+            CPU_Circle = document.getElementById("CPU-USSAGE");
+            CPU_Circle.circumference = 2 * Math.PI * CPU_Circle.r.baseVal.value;
+            CPU_Circle.style.strokeDasharray = `${CPU_Circle.circumference} ${CPU_Circle.circumference}`;
+
+            MEMORY_Circle = document.getElementById("MEMORY-USSAGE");
+            MEMORY_Circle.circumference =
+                2 * Math.PI * MEMORY_Circle.r.baseVal.value;
+            MEMORY_Circle.style.strokeDasharray = `${MEMORY_Circle.circumference} ${MEMORY_Circle.circumference}`;
+
+            Disk_Circle = document.getElementById("DISK-USSAGE");
+            Disk_Circle.circumference =
+                2 * Math.PI * Disk_Circle.r.baseVal.value;
+            Disk_Circle.style.strokeDasharray = `${Disk_Circle.circumference} ${Disk_Circle.circumference}`;
+
+            // maybe change to total players over all servers
+            Player_Circle = document.getElementById("PLAYERS");
+            Player_Circle.circumference =
+                2 * Math.PI * Player_Circle.r.baseVal.value;
+            Player_Circle.style.strokeDasharray = `${Player_Circle.circumference} ${Player_Circle.circumference}`;
+        } catch {}
+
+        setInterval(() => {
+            GetResources();
+        }, 1000);
+    }
+
+
+
+
+                    // useState hooks to set the text
+                    SetCPUText(`${responseJSON.cpu}%`);
+                    SetMemoryText(
+                        `${responseJSON.memory.currentmem}GB / ${responseJSON.memory.totalmem}GB`
+                    );
+                    SetDiskText(
+                        `${responseJSON.disk.free}GB / ${responseJSON.disk.total}GB`
+                    );
+                    SetPlayerText(
+                        `${responseJSON.players.current} / ${responseJSON.players.total}`
+                    );
+
+                    // Set the progression of the circle
+                    SetCPUStyle(GetStyle(CPU_Circle, responseJSON.cpu));
+
+                    SetMemoryStyle(
+                        GetStyle(
+                            MEMORY_Circle,
+                            (responseJSON.memory.currentmem /
+                                responseJSON.memory.totalmem) *
+                                100
+                        )
+                    );
+
+
+                    SetDiskStyle(
+                        GetStyle(
+                            Disk_Circle,
+                            (responseJSON.disk.free / responseJSON.disk.total) *
+                                100
+                        )
+                    );
+                    SetPlayerStyle(
+                        GetStyle(
+                            Player_Circle,
+                            (responseJSON.players.current /
+                                responseJSON.players.total) *
+                                100
+                        )
+                    );
