@@ -1,0 +1,14 @@
+.progress_circle {
+    transition: 500ms;
+    transform: rotate(-90deg);
+    transform-origin: 125px 125px;
+    fill: none;
+    stroke-width: 4;
+}
+
+.empty_circle{
+    fill: none;
+    stroke: white;
+    stroke-width: 4;
+}
+

@@ -1,6 +1,8 @@
 :root{
     --PowercraftColorGradient: linear-gradient(to bottom right, rgb(0, 200, 255), rgb(0, 140, 255));
     --PowercraftColor: rgb(0, 140, 255);
+    --PowercraftColorDark: rgb(45, 124, 194);
+    --PowercraftColorOpaic: rgba(0, 140, 255, 0.5);
 
     --OpaicGrey:rgba(83, 82, 82, 0.1);
     --OpaicDarkGrey:rgba(0, 0, 0, 0.856);

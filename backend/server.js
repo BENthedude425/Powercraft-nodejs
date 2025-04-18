@@ -989,9 +989,9 @@ function ToGiga(number) {
 
 app.get("/api/get-resources", async (req, res) => {
     // Format into GB
-    const freeMemory = Round(ToGiga(os.freemem), 2);
+    const currentMemory = Round(ToGiga(os.totalmem() - os.freemem()), 2);;
     const totalMemory = Round(ToGiga(os.totalmem()), 2);
-    const Memory = { freemem: freeMemory, totalmem: totalMemory };
+    const Memory = { currentmem: currentMemory, totalmem: totalMemory };
 
     var Cpu = await new Promise((resolve, reject) => {
         osUtils.cpuUsage((x) => {

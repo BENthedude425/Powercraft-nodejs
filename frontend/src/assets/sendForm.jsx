@@ -30,9 +30,9 @@ function SendForm(formID, formPath) {
         if (xhr.readyState == 4) {
             const response = xhr.responseText;
             const responseJSON = JSON.parse(response);
-            console.log(responseJSON)
+            console.log(responseJSON);
             if (responseJSON[0]) {
-                alert(responseJSON[1])
+                alert(responseJSON[1]);
                 window.location = responseJSON[2];
                 return;
             }

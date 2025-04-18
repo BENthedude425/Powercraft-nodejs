@@ -1,31 +1,27 @@
 function ServerSideBar() {
     return (
-        <list className="side_bar">
-            <li>                    ServerName                  </li>
-            <li className="white">  Chat                        </li>
-            <li>                    Console                     </li>
-            <li className="white">  Map                         </li>
-            <li>                    Worlds                      </li>
-            <li className="white">  Players                     </li>
-            <li>                    Plugins                     </li>
-            <li className="white">  Server settings             </li>
-        </list>
+        <div className="sidebar">
+        <span href="/login">Chat</span>
+        <span href="/login">Console</span>
+        <span href="/login">Players</span>
+        <span href="/login">Config Files</span>
+        <span href="/login">Plugins</span>
+        <span href="/login">Backup</span>
+        <span href="/login">Quick commands</span>
+        <span href="/login">Scheduled commands</span>
+  
+        <span className="sidebar-dropdown">
+          <span>Advanced</span>
+          <div className="sidebar-content">
+            <span>Powercraft users</span>
+            <span>Powercraft settings</span>
+          </div>
+        </span>
+        <span href="/login">Scheduled commands</span>
+      </div>
     );
 }
 
-function ToggleServerSideBar(){
-    const sideBar = document.getElementById("sidebar");
-
-    if(sideBar.style.display == none){
-        sideBar.style.display == flex;
-        return;
-    }
-
-    sideBar.style.display = none;
-}
-
-
 export {
     ServerSideBar,
-    ToggleServerSideBar
 }
