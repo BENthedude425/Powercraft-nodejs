@@ -2,46 +2,54 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    background: linear-gradient(to bottom, #ebedf3, #fafbff);
 }
 
-.main{
+.main {
     display: flex;
     flex-direction: row;
-    
+
     width: 100%;
     height: 100%;
 }
 
 .dashboard-container {
     display: block;
-    
+
     width: 100%;
     height: 100%;
 }
 
-.dashboard-heading{
+.dashboard-heading {
     margin: 0px;
     border-bottom: 1px solid var(--PowercraftColor);
     background-color: var(--OpaicGrey);
 }
 
-.server-list-container{
+.server-list-container {
     overflow-y: scroll;
     height: 50vh;
 }
 
-.resource-grid{
+.resource-grid {
     display: grid;
-    grid-template-areas: 
-    "CPU MEMORY DISK PLAYERS"
-    "TEST1 TEST2 TEST3 PLAYERS"
-    ;
+    grid-template-areas:
+        "GRAPH GRAPH GRAPH PLAYERCOUNT PLAYERCOUNT"
+        "test test test PLAYERLIST PLAYERLIST"
+        "test test test PLAYERLIST PLAYERLIST";
 
-    grid-column: auto;
-    grid-row: auto;
+    grid-template-columns: 1300px 650px;
+    grid-template-rows: 250px;
 
-    gap: 55px;
+    height: 50%;
+
+    gap: 20px;
     padding: 1%;
+}
+
+.resource-grid div {
+    background-color: white;
+    height: 250px;
 }
 
 @media (max-width: 480px) {

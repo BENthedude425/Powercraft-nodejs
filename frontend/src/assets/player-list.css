@@ -1,0 +1,15 @@
+.PlayerList {
+    display: flex;
+    flex-direction: column;
+
+    overflow-y: scroll;
+}
+
+.player_listing{
+    height: 15px;
+}
+
+.player_listing img{
+    width: 32px;
+    height: 32px;
+}

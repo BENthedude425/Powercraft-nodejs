@@ -12,7 +12,7 @@ export const ProtectedRoute = () => {
         auth = auth[0]
       }
 
-      if (!auth) {
+      if (auth != true) {
         navigate('/login')
       }
 

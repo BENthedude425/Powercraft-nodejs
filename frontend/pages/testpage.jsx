@@ -1,14 +1,13 @@
 import { React, useState, useRef, useEffect } from "react";
 
 
-import Serverlist from "../src/components/CServerList2";
+import Serverlist from "../src/components/CServerList";
 import DashBoardSideBar from "../src/components/CDashSideBar";
 import Header from "../src/components/CHeader";
-import Graph from "../src/components/CGraph";
+import {Graph} from "../src/components/CGraphs";
 import GetAPIAddr from "../src/assets/getAPIAddr";
 
 import "../src/assets/dashboard.css";
-import { GetAppRounded } from "@mui/icons-material";
 
 function PTest() {
     // Hooks for progress circle text updates
@@ -25,6 +24,7 @@ function PTest() {
 
     const [CPUDATA, SETCPUDATA] = useState([]);
     const [MEMORYDATA, SETMEMORYDATA] = useState([]);
+    const [PLAYERDATA, SETPLAYERDATA] = useState([]);
     const initilised = useRef(false);
 
     // Setup progress cirlce variables
@@ -62,6 +62,8 @@ function PTest() {
                             value: responseJSON.cpu,
                         }),
                     ]);
+                    
+                    SETPLAYERDATA([...responseJSON.players])
 
                     GetResources()
                 });
@@ -109,7 +111,7 @@ function PTest() {
                             <Graph
                                 graphWidth="1000"
                                 graphHeight="650"
-                                graphData={CPUDATA}
+                                graphData={PLAYERDATA}
                             />
                         </div>
 
