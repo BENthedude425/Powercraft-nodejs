@@ -1,42 +1,50 @@
-.server-list{
+.server-list {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
 
-    width: 9vw;
-    
+    padding: 1.5%;
+    width: 100%;
+    height: auto;
+
     transition: all 500ms;
     background-color: var(--OpaicGrey);
 }
 
-.server-list-options{
+.server-list-options {
     overflow-x: hidden;
     overflow-y: scroll;
 }
 
-.server-listing img{
+.server-listing img {
     float: right;
     width: 64px;
     height: 64px;
 }
 
-
-.server-listing, .create-server{
+.server-listing,
+.create-server {
     transition: all 500ms;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
 
+    background-color: var(--OpaicGrey);
+    border: 1px solid var(--OpaicGrey);
+    border-radius: 15px;
+
+
+    height: 8vh;
+    width: 30%;
+
+    margin: 0.5vh;
     font-size: 0.8vw;
-    min-height: 8vh;
-    border-bottom: 1px solid black;
 }
 
-.server-list span{
+.server-list span {
     display: flex;
     align-items: center;
 }
 
-.status-light{
+.status-light {
     display: flex;
     float: left;
     margin-right: 0.5vw;
@@ -48,35 +56,32 @@
     border-radius: 50%;
 }
 
-
-.server-list-button{
+.server-list-button {
     display: none;
     position: absolute;
     right: -35px;
     top: 10px;
 }
 
-.server-list-button img{
+.server-list-button img {
     display: none;
     width: 32px;
     height: 32px;
 }
 
-
-
-.server-listing:hover , .create-server:hover{
-    transform: translate(5px);
+.server-listing:hover,
+.create-server:hover {
+    transform: scale(1.1);
 }
 
-@media (max-width:480px)  { /* smartphones, Android phones, landscape iPhone */ 
-    .server-list{
+@media (max-width: 480px) {
+    /* smartphones, Android phones, landscape iPhone */
+    .server-list {
         position: absolute;
         height: 100%;
     }
 
-    .server-list-button img{
+    .server-list-button img {
         display: block;
     }
-
-    
 }

@@ -3,7 +3,7 @@
     width: 500px;
     height: 300px;
 
-    background: var(--OpaicGrey);
+    background: whitesmoke;
     border: 1px solid black
 }
 
@@ -18,14 +18,31 @@
     stroke: var(--PowercraftColor);
 }
 
+.graph_line2{
+    stroke-width: 2px;
+    stroke: red;
+}
+
+.graph_grid{
+    stroke-width: 2px;
+    stroke: var(--OpaicGrey);
+}
+
+.graph_shadow1{
+    fill: var(--PowercraftColorOpaic);
+    stroke-width: 0.05px;
+    stroke: var(--PowercraftColorOpaic);
+}
+
+.graph_shadow2{
+    fill: rgba(255,0 ,0 ,0.2);
+    stroke-width: 0.05px;
+    stroke: rgba(255,0 ,0 ,0.2);
+}
+
+
 .graph-axis{
     fill: black;
     stroke-width: 1px;
     stroke: black;
-}
-
-.underline{
-    fill: var(--PowercraftColorOpaic);
-    stroke-width: 0.05px;
-    stroke: var(--PowercraftColorOpaic);
 }

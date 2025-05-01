@@ -20,6 +20,8 @@ const TABLES = {
     Users: "(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))",
     Servers:
         "(ID INT(255), server_name VARCHAR(255), server_icon_path VARCHAR(255), server_executable_path VARCHAR(255), server_launcher_type VARCHAR(255), server_version VARCHAR(255), forge_release VARCHAR(255), server_status VARCHAR(255))",
+    Players:
+        "(UUID VARCHAR(36), player_name VARCHAR(255), player_head_img_path VARCHAR(255), player_body_img_path VARCHAR(255), date_joined DATE, last_played DATETIME, time_played VARCHAR(15))",
 };
 
 const FILES = {
@@ -86,8 +88,6 @@ async function Setup() {
             }
         );
     });
-
-
 }
 
 async function CheckFilesExist() {

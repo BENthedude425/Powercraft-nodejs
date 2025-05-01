@@ -105,23 +105,22 @@ function ServerList() {
     return (
         <div className="server-list" id="server_list" style={ServerListStyle}>
             <ServerListButton />
-            <div className="server-list-options">
-                <CreateServerButton />
-                {serverlistings.map((data) => {
-                    const serverIMG = `${APIADDR}/images/${data.server_icon_path}`;
-                    return (
-                        <Server
-                            key={data.ID}
-                            serverID={data.ID}
-                            serverName={data.server_name}
-                            serverStatus={data.server_status}
-                            serverLauncher={data.server_launcher_type}
-                            serverVersion={data.server_version}
-                            serverImg={serverIMG}
-                        />
-                    );
-                })}
-            </div>
+
+            <CreateServerButton />
+            {serverlistings.map((data) => {
+                const serverIMG = `${APIADDR}/images/servers/${data.server_icon_path}`;
+                return (
+                    <Server
+                        key={data.ID}
+                        serverID={data.ID}
+                        serverName={data.server_name}
+                        serverStatus={data.server_status}
+                        serverLauncher={data.server_launcher_type}
+                        serverVersion={data.server_version}
+                        serverImg={serverIMG}
+                    />
+                );
+            })}
         </div>
     );
 }

@@ -1,7 +1,9 @@
-express = require("express");
+const express = require("express");
+const puppeteer = require("puppeteer");
 const cors = require("cors");
 const mysql2 = require("mysql2");
 const app = express();
+
 const os = require("os");
 const osUtils = require("os-utils");
 const diskCheck = require("diskusage");
@@ -17,7 +19,6 @@ const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
 const md5 = require("md5");
-const { Console } = require("console");
 
 var DATABASECONNECTION;
 var DATABASECONFIGS;
@@ -29,12 +30,15 @@ const FILEIDENT = "server.js";
 
 // Needed for redirections on the frontend
 const FIXEDIPADDRESS = "http://test.powercraft.uk:81";
-//const FIXEDIPADDRESS = "http://192.168.0.62";
+//const FIXEDIPADDRESS = "http://176.24.124.59:81";
+//const FIXEDIPADDRESS = "http://192.168.0.15:81";
 
 // An object containing all of the running server processes using serverID's as keys
 const SERVERPROCESSES = {};
+
 // Keeps track of each servers player count using serverID's as keys
-const PLAYERCOUNTS = {};
+const PLAYERCOUNTS = [];
+var PLAYERDATA = [];
 
 function GetExecutablePath(server) {
     switch (server.server_launcher_type) {
@@ -188,6 +192,10 @@ async function INIT() {
     await Setup();
 
     await SetAllServersStopped();
+
+    setInterval(() => {
+        GetAllPlayers();
+    }, 5000);
     modules.Log(FILEIDENT, "FINISHED INIT", true);
 }
 
@@ -225,6 +233,23 @@ async function SetAllServersStopped() {
     });
 }
 
+// Check if user has auth and give access accordingly
+async function Authenticate(req, res, next) {
+    // Get token and check if the user has auth
+    const token = GetCookie(req, "auth_token");
+    const auth = await JWTCheck(token);
+
+    // If not auth'd then return
+    if (!auth) {
+        modules.Log(FILEIDENT, `User failed authentication on API! INFO: ${token}`)
+        res.json([false]);
+        return;
+    }
+
+    // Allow access to API endpoint
+    next();
+}
+
 // ---------- APP HANDLERS ---------- \\
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -232,6 +257,7 @@ app.use(cookieParser());
 app.use(cors({ credentials: true, origin: FIXEDIPADDRESS }));
 app.use(express.static("public"));
 app.use(fileUpload());
+app.use(Authenticate);
 
 // Returns path for a servers directory
 function GetServerPath(serverName) {
@@ -268,6 +294,7 @@ function GetUniqueServerID() {
     });
 }
 
+// Depriciated
 function GetServerIDFromURL(req) {
     const serverID = req.path.split("/");
     return serverID[serverID.length - 1];
@@ -470,7 +497,7 @@ function RunServer(server) {
     const command = ReturnRunCommand(server);
     var serverProcess = exec(command);
     PLAYERCOUNTS[serverID] = {
-        current: 0,
+        value: 0,
         total: 0,
     };
 
@@ -481,7 +508,7 @@ function RunServer(server) {
             formattedData = formattedData.split(" ");
 
             PLAYERCOUNTS[serverID] = {
-                current: parseInt(formattedData[3]),
+                value: parseInt(formattedData[3]),
                 total: parseInt(formattedData[8]),
             };
         } else {
@@ -505,6 +532,122 @@ function RunServer(server) {
 
     SERVERPROCESSES[serverID] = serverProcess;
 }
+
+// Updates the server player count
+function GetPlayers(serverID) {
+    const serverProcess = SERVERPROCESSES[serverID];
+    serverProcess.stdin.write("list\n");
+    return PLAYERCOUNTS[serverID];
+}
+
+// Returns the total player count
+async function GetAllPlayers() {
+    return await new Promise((resolve, reject) => {
+        var playerCount = {
+            time: Date.now(),
+            value: 0,
+            total: 0,
+        };
+
+        DATABASECONNECTION.query(
+            `SELECT * FROM servers WHERE server_status = 'Running'`,
+            (error, results) => {
+                if (error != null) {
+                    console.log(error);
+                }
+
+                results.forEach((result) => {
+                    const count = GetPlayers(result.ID);
+                    playerCount.value += count.value;
+                    playerCount.total += count.total;
+                });
+
+                // If no servers are running
+                if (
+                    playerCount.value == undefined ||
+                    playerCount.total == undefined
+                ) {
+                    playerCount.value = 0;
+                    playerCount.total = 0;
+                }
+
+                PLAYERDATA.push(playerCount);
+                ClampData(PLAYERDATA, 30);
+
+                resolve(PLAYERDATA);
+            }
+        );
+    });
+}
+
+function ClampData(dataSet, numberOfMaxValues) {
+    if (dataSet.length <= numberOfMaxValues) {
+        return dataSet;
+    }
+
+    dataSet.shift();
+
+    return dataSet;
+}
+
+// Returns true if the server is found
+function CheckServerIsRunning(serverID) {
+    const process = SERVERPROCESSES[serverID];
+    return process != undefined;
+}
+
+async function AddPlayerToDatabase(UUID) {
+    const url = `https://mcuuid.net/?q=${UUID}`;
+    const browser = await puppeteer.launch({ headless: true });
+
+    const page = await browser.newPage();
+    await page.goto(url);
+
+    const username = await page.evaluate(() => {
+        let inputs = document.querySelectorAll("input");
+
+        var username;
+
+        for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
+            if (input.id == "results_username") {
+                username = input.value;
+            }
+        }
+
+        return username;
+    });
+
+    browser.close();
+
+    const bodyurl = `https://crafthead.net/armor/body/${UUID}`;
+    const headurl = `https://crafthead.net/avatar/${UUID}`;
+    const sql = `INSERT INTO players(UUID, player_name, player_head_img_path, player_body_img_path, date_joined, last_played, time_played) VALUES(?, ?, ?, ?, ?, ?, ?)`;
+    const datetime = new Date();
+    const formattedDate = datetime.toISOString().split("T")[0];
+
+    DATABASECONNECTION.query(
+        sql,
+        [UUID, username, headurl, bodyurl, formattedDate, null, null],
+        (error) => {
+            if (error != null) {
+                modules.Log(
+                    FILEIDENT,
+                    `There was an error adding player to the database: ${error}`
+                );
+            }
+        }
+    );
+
+    return username;
+}
+
+app.get("/api/UUID/*", (req, res) => {
+    let path = req.path.split("/");
+    const UUID = path[path.length - 1];
+
+    res.send(AddPlayerToDatabase(UUID));
+});
 
 // API ACTIONS
 app.post("/api/create-user", async (req, res) => {
@@ -621,7 +764,7 @@ app.post("/api/create-server", async (req, res) => {
     // if no image is attached use default one
     if (serverSettings.image_path != "default.png") {
         writeFileSync(
-            `${process.cwd()}/images/${serverSettings.image_path}`,
+            `${process.cwd()}/images/servers/${serverSettings.image_path}`,
             req.files.server_img.data
         );
     }
@@ -695,7 +838,7 @@ app.get("/api/authenticate/*", async (req, res) => {
     const splitURL = req.path.split("/");
     const token = splitURL[splitURL.length - 1];
 
-    if (token == "undefined") {
+    if (token == undefined) {
         res.json([false]);
         return;
     }
@@ -706,15 +849,6 @@ app.get("/api/authenticate/*", async (req, res) => {
 });
 
 app.get("/api/get-server/*", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
     const splitPath = req.path.split("/");
     const serverName = splitPath[splitPath.length - 1];
 
@@ -726,15 +860,6 @@ app.get("/api/get-server/*", async (req, res) => {
 });
 
 app.get("/api/get-server-properties*", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
     const fixedPath = "get-server-properties";
     const serverID = req.path.slice(
         req.path.lastIndexOf(fixedPath) + fixedPath.length + 1
@@ -818,30 +943,12 @@ async function GetServerProperties(serverID) {
 }
 
 app.get("/api/get-server-versions", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
     let contents = await readFileSync("Output.json", { encoding: "utf8" }); // Change to get the data from an endpoint
     contents = JSON.parse(contents);
     res.jsonp(contents);
 });
 
 app.get("/api/get-server-data/*", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
     const serverID = GetServerIDFromURL(req);
     const SQLquery = "SELECT * FROM servers WHERE ID = ?";
     DATABASECONNECTION.query(SQLquery, [serverID], (error, results, _) => {
@@ -859,15 +966,6 @@ app.get("/api/get-server-data/*", async (req, res) => {
 
 // Long poll
 app.get("/api/get-server-terminal*", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
     const LINELIMIT = 250;
 
     let url = req.path.split("/");
@@ -903,15 +1001,6 @@ app.get("/api/get-server-terminal*", async (req, res) => {
 
 // Long poll
 app.get("/api/get-all-servers/*", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
     // Get the current checksum
     const hash = req.path.slice(req.path.lastIndexOf("/") + 1);
 
@@ -941,15 +1030,6 @@ app.get("/api/get-all-servers/*", async (req, res) => {
 // Long poll
 app.get("/api/LP-get-server-data/*", async (req, res) => {
     // PATH = /api/LP-get-server-data/SERVERID/CHECKSUM
-
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
 
     let splitPath = req.path.split("/");
     const checkSum = splitPath[splitPath.length - 2];
@@ -989,7 +1069,7 @@ function ToGiga(number) {
 
 app.get("/api/get-resources", async (req, res) => {
     // Format into GB
-    const currentMemory = Round(ToGiga(os.totalmem() - os.freemem()), 2);;
+    const currentMemory = Round(ToGiga(os.totalmem() - os.freemem()), 2);
     const totalMemory = Round(ToGiga(os.totalmem()), 2);
     const Memory = { currentmem: currentMemory, totalmem: totalMemory };
 
@@ -1005,76 +1085,34 @@ app.get("/api/get-resources", async (req, res) => {
     Disk.free = Round(ToGiga(Disk.free), 2);
     Disk.availble = Round(ToGiga(Disk.available), 2);
 
-    const Players = await GetAllPlayers();
-
     Resources = {
         cpu: Cpu,
         memory: Memory,
         disk: Disk,
-        players: Players,
+        players: PLAYERDATA,
     };
 
     res.json(Resources);
 });
 
-// Updates the server player count
-function GetPlayers(serverID) {
-    const serverProcess = SERVERPROCESSES[serverID];
-    serverProcess.stdin.write("list\n");
-    return PLAYERCOUNTS[serverID];
-}
+app.get("/api/get-player-list", async (req, res) => {
+    const sql = "SELECT * FROM players";
 
-// Returns the total player count
-async function GetAllPlayers() {
-    return await new Promise((resolve, reject) => {
-        var playerCount = {
-            current: 0,
-            total: 0,
-        };
-        DATABASECONNECTION.query(
-            `SELECT * FROM servers WHERE server_status = 'Running'`,
-            (error, results) => {
-                if (error != null) {
-                    console.log(error);
-                }
+    DATABASECONNECTION.query(sql, (error, results) => {
+        if (error != null) {
+            modules.Log(
+                FILEIDENT,
+                `There was an error getting the player list: ${error}`
+            );
 
-                results.forEach((result) => {
-                    const count = GetPlayers(result.ID);
-                    playerCount.current += count.current;
-                    playerCount.total += count.total;
-                });
+            return;
+        }
 
-                // If no servers are running
-                if (
-                    playerCount.current == undefined ||
-                    playerCount.total == undefined
-                ) {
-                    playerCount.current = 0;
-                    playerCount.total = 0;
-                }
-
-                resolve(playerCount);
-            }
-        );
+        res.json(results);
     });
-}
-
-// Returns true if the server is found
-function CheckServerIsRunning(serverID) {
-    const process = SERVERPROCESSES[serverID];
-    return process != undefined;
-}
+});
 
 app.get("/api/set-server-control*", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
     const serverID = GetServerIDFromURL(req);
     const action = req.path.split("/")[req.path.split("/").length - 2];
     const server = await GetServerFromID(serverID);
@@ -1138,15 +1176,6 @@ app.post("/api/set-server-properties*", async (req, res) => {
 });
 
 app.get("/api/input-server-terminal*", async (req, res) => {
-    // Check that the user is JWT authenticated
-    const token = GetCookie(req, "auth_token");
-    const auth = await JWTCheck(token);
-
-    if (!auth) {
-        res.json(["Failed to authenticate!"]);
-        return;
-    }
-
     const splitPath = req.path.split("/");
     const serverID = splitPath[splitPath.length - 1];
     const input = splitPath[splitPath.length - 2].split("%20").join(" ");
@@ -1220,7 +1249,7 @@ app.get("/createnewrootuser", async (req, res) => {
 });
 
 app.get("/images/*", async (req, res) => {
-    const splitPath = req.path.split("/");
+    const splitPath = req.path.split("/images");
     const picturePath = `${process.cwd()}/images/${
         splitPath[splitPath.length - 1]
     }`;
