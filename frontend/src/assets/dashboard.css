@@ -3,6 +3,9 @@
     flex-direction: column;
     align-items: flex-start;
     background: linear-gradient(to bottom, #ebedf3, #fafbff);
+
+    font-family: "Lucida Console", "Courier New", monospace;
+    overflow-y: hidden;    
 }
 
 .main {
@@ -21,47 +24,87 @@
 }
 
 .dashboard-heading {
-    margin: 0px;
     border-bottom: 1px solid var(--PowercraftColor);
-    background-color: var(--OpaicGrey);
+    font-size: 2em;
 }
 
-.server-list-container {
-    overflow-y: scroll;
-    height: 50vh;
+.dashboard-header{
+    height: 4vh;
+
+
+    background-color: var(--PowercraftColorDark);
+    box-shadow: 0px 1px 5px 0px;
 }
 
-.resource-grid {
-    display: grid;
-    grid-template-areas:
-        "GRAPH GRAPH GRAPH PLAYERCOUNT PLAYERCOUNT"
-        "test test test PLAYERLIST PLAYERLIST"
-        "test test test PLAYERLIST PLAYERLIST";
+.dashboard-list-container {
+    display: flex;
+    flex-direction: column;
 
-    grid-template-columns: 1300px 650px;
-    grid-template-rows: 250px;
+    height: 100%;
 
-    height: 50%;
+    box-shadow: 0px 0px 5px 1px;
+    background-color: white;
+    
+}
+
+.dashboard-list-container-content{
+    display: flex;
+    flex-direction: row;
+}
+
+.dashboard-list-container-content-div{
+    width: 100%;
+    padding: 1%;
+}
+
+.dashboard-resource-container{
+    display: flex;
+    flex-direction: column;
 
     gap: 20px;
-    padding: 1%;
+    
+    height: 40%;
+    padding: 1vw;
+    margin: 20px;
+
+    box-shadow: 0px 0px 5px 1px;
+    background-color: white;  
+}
+
+.dashboard-monitor-holder{
+    background-color: red;;
+}
+
+.dashboard-graph-holder{
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+.dashboard-graph-key{
+    height: 2vh;
+    margin-top: -20px;
+
+
+    background: whitesmoke;
+    border: 1px solid black;
+    border-top: none;
+}
+
+
+.dashboard-resource-grid {
+    display: flex;
+    flex-direction: column;
+
+    height: 100%;
+    gap: 20px;
 }
 
 .resource-grid div {
     background-color: white;
-    height: 250px;
 }
 
 @media (max-width: 480px) {
     /* smartphones, Android phones, landscape iPhone */
-    .header {
-        display: none;
-    }
-
-    .dashboard-sidebar {
-        width: 501px;
-        background-color: red;
-    }
 }
 @media (min-width: 600px) {
     /* portrait tablets, portrait iPad, e-readers (Nook/Kindle), landscape 800x480 phones (Android) */

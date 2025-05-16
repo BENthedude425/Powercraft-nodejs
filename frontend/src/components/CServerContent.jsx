@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import ServerStatHolder from "./ServerStatHolder";
 
-import GetApiAddr from "../assets/getAPIAddr";
+import {GetApiAddr} from "../assets/APIactions";
 
 export default function ServerContent() {
     const APIADDR = GetApiAddr();

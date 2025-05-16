@@ -5,7 +5,7 @@ import Serverlist from "../src/components/CServerList";
 import DashBoardSideBar from "../src/components/CDashSideBar";
 import Header from "../src/components/CHeader";
 import {Graph} from "../src/components/CGraphs";
-import GetAPIAddr from "../src/assets/getAPIAddr";
+import {GetAPIAddr} from "../src/assets/APIactions";
 
 import "../src/assets/dashboard.css";
 

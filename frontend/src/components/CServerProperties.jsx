@@ -1,7 +1,7 @@
 import { React } from "react";
 
 import { useState, useEffect } from "react";
-import GetAPIAddr from "../assets/getAPIAddr";
+import {GetAPIAddr} from "../assets/APIactions";
 
 const APIADDR = GetAPIAddr();
 

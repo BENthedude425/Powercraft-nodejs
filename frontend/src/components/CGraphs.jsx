@@ -1,7 +1,7 @@
 import { React, Component } from "react";
 
 import "../assets/graph.css";
-import { Domain } from "@mui/icons-material";
+import { Square } from "@mui/icons-material";
 
 // Calculate shapes to create shadow below graph line
 function CalculateShadow(
@@ -315,20 +315,26 @@ class IntegratedGraph extends Component {
     render() {
         function GetGraphGrid(object) {
             var DOM = [];
+            const gridNumber = 5;
+            const spacing = 1 / gridNumber;
 
-            for (let x = 0; x < 4; x++) {
+            for (let x = 0; x < gridNumber; x++) {
                 DOM.push(
                     <line
                         x1={
                             object.graphAxis +
-                            x * (object.graphWidth - object.graphAxis) * 0.2 +
-                            (object.graphWidth - object.graphAxis) * 0.2
+                            x *
+                                (object.graphWidth - object.graphAxis) *
+                                spacing +
+                            (object.graphWidth - object.graphAxis) * spacing
                         }
                         y1={0}
                         x2={
                             object.graphAxis +
-                            x * (object.graphWidth - object.graphAxis) * 0.2 +
-                            (object.graphWidth - object.graphAxis) * 0.2
+                            x *
+                                (object.graphWidth - object.graphAxis) *
+                                spacing +
+                            (object.graphWidth - object.graphAxis) * spacing
                         }
                         y2={object.graphHeight - object.graphAxis}
                         className="graph_grid"
@@ -339,10 +345,11 @@ class IntegratedGraph extends Component {
 
             var position;
 
-            for (let y = 0; y < 4; y++) {
+            for (let y = 0; y < gridNumber; y++) {
                 position =
-                    y * (object.graphHeight - object.graphAxis) * 0.2 +
-                    (object.graphHeight - object.graphAxis) * 0.2;
+                    y * (object.graphHeight - object.graphAxis) * spacing +
+                    (object.graphHeight - object.graphAxis) * spacing;
+
                 DOM.push(
                     <>
                         <line
@@ -360,7 +367,7 @@ class IntegratedGraph extends Component {
                     </>
                 );
             }
-
+            
             DOM.push(
                 <>
                     <text
@@ -420,16 +427,17 @@ class IntegratedGraph extends Component {
         this.graphWidth = this.props.graphWidth;
         this.graphHeight = this.props.graphHeight;
         this.graphAxis = this.props.graphAxis;
+        this.graphKeys = this.props.graphKeys;
         this.gridArea = this.props.gridArea;
         this.adaptive = false;
         this.lineClassName = this.props.lineClassName;
         this.enableShadow = this.props.enableShadow;
         [this.smallestx, this.largestx, this.smallesty, this.largesty];
-
-        this.graphGridDOM = GetGraphGrid(this);
-
         this.TEXTOFFSETY = 15;
         this.TEXTOFFSETX = -40;
+        this.graphGridDOM = GetGraphGrid(this);
+
+
         const graphLines = Object.keys(this.graphData);
 
         [this.smallestx, this.largestx, this.smallesty, this.largesty] =
@@ -477,7 +485,7 @@ class IntegratedGraph extends Component {
                 );
             });
         });
-
+        
         // Return the DOM generated previously
         return (
             <div
@@ -513,6 +521,32 @@ class IntegratedGraph extends Component {
                         className="graph-axis"
                         key="Y-Axis"
                     />
+
+                    {Object.keys(this.graphKeys).map((key) => {
+                        const keys = Object.keys(this.graphKeys);
+                        const index = keys.indexOf(key);
+                        const y = this.graphHeight - this.graphAxis + 8;
+                        const x = this.graphAxis + 32;
+
+                        return (
+                            <>
+                                <rect
+                                    height={16}
+                                    width={16}
+                                    x={x + index * 75}
+                                    y={y}
+                                    fill={this.graphKeys[key]}
+                                />
+                                <text
+                                    x={x + index * 75}
+                                    y={y + 30}
+                                    fill={this.graphKeys[key]}
+                                >
+                                    {key}
+                                </text>
+                            </>
+                        );
+                    })}
 
                     {this.graphGridDOM.map((line) => {
                         return line;
@@ -557,9 +591,12 @@ IntegratedGraph.defaultProps = {
     graphWidth: 500,
     graphHeight: 300,
     graphAxis: 40,
+    graphKeys: [],
     gridArea: "none",
     lineClassName: "graph_line1",
     enableShadow: true,
+    TEXTOFFSETY : 15,
+    TEXTOFFSETX : -40,
 };
 
 Graph.defaultProps = {

@@ -1,30 +1,49 @@
-import { React, useState, useRef, useEffect } from "react";
-
-import Serverlist from "../src/components/CServerList";
-import DashBoardSideBar from "../src/components/CDashSideBar";
-import Header from "../src/components/CHeader";
+import { React, useState, useRef, useEffect, lazy } from "react";
 import { Graph, IntegratedGraph } from "../src/components/CGraphs";
-import PlayerList from "../src/components/CPlayerList";
 
-import GetAPIAddr from "../src/assets/getAPIAddr";
+const Serverlist = lazy(() => import("../src/components/CServerList"));
+const DashBoardSideBar = lazy(() => import("../src/components/CDashSideBar"));
+const PlayerList = lazy(() => import("../src/components/CPlayerList"));
+
+import { ProgressCircle, GetStyle } from "../src/components/CProgressCircle";
+import { GetAPIAddr } from "../src/assets/APIactions";
 
 import "../src/assets/dashboard.css";
 
 export default function PDashboard() {
-    const [CPUDATA, SETCPUDATA] = useState([]);
-    const [MEMORYDATA, SETMEMORYDATA] = useState([]);
-    const [PLAYERDATA, SETPLAYERDATA] = useState([]);
+    const [GraphWidth, SetGraphWidth] = useState(300);
+    const [IntegratedGraphWidth, SetIntegratedGraphWidth] = useState(300);
+
+    // Graph data for integrated graph
+    const [CPUGraphData, SetCPUGraphData] = useState([]);
+    const [MemoryGraphData, SetMemoryGraphData] = useState([]);
+    const [PlayerGraphData, SetPlayerGraphData] = useState([]);
+
+    // Hooks for stat circles
+    const [Disk_Text, SetDiskText] = useState("loading");
+    const [Disk_Style, SetDiskStyle] = useState({});
+    const [Player_Text, SetPlayerText] = useState("loading");
+    const [Player_Style, SetPlayerStyle] = useState({});
+
+    // Hooks for graph keys
+    const [IntegratedGraphKeys, SetIntegratedGraphKeys] = useState({
+        CPU: "blue",
+        MEMORY: "red",
+    });
+
+    var Disk_Circle;
+    var Player_Circle;
 
     const IntegratedGraphData = {
         CPU: {
             lineClassName: "graph_line1",
             shadowClassName: "graph_shadow1",
-            data: CPUDATA,
+            data: CPUGraphData,
         },
         MEMORY: {
             lineClassName: "graph_line2",
             shadowClassName: "graph_shadow2",
-            data: MEMORYDATA,
+            data: MemoryGraphData,
         },
     };
     const initilised = useRef(false);
@@ -33,33 +52,66 @@ export default function PDashboard() {
 
     // Init circle variables on load
     useEffect(() => {
-        //if (!initilised.current) {
-        //    initilised.current = true;
-        //    InitProgressCircles();
-        //}
+        if (!initilised.current) {
+            initilised.current = true;
+            InitProgressCircles();
+            CalculateGraphWidth(20);
+        }
 
         GetResources();
     }, []);
+
+    function InitProgressCircles() {
+        Disk_Circle = document.getElementById("DISK_CIRCLE");
+        Disk_Circle.circumference = 2 * Math.PI * Disk_Circle.r.baseVal.value;
+        Disk_Circle.style.strokeDasharray = `${Disk_Circle.circumference} ${Disk_Circle.circumference}`;
+
+        Player_Circle = document.getElementById("PLAYER_CIRCLE");
+        Player_Circle.circumference =
+            2 * Math.PI * Player_Circle.r.baseVal.value;
+        Player_Circle.style.strokeDasharray = `${Player_Circle.circumference} ${Player_Circle.circumference}`;
+    }
 
     function GetResources() {
         fetch(`${APIADDR}/api/get-resources`, { credentials: "include" }).then(
             (response) => {
                 response.json().then((responseJSON) => {
-                    SETMEMORYDATA([
-                        ...AddGraphData(MEMORYDATA, {
+                    SetMemoryGraphData([
+                        ...AddGraphData(MemoryGraphData, {
                             time: Date.now(),
                             value: responseJSON.memory.currentmem,
                         }),
                     ]);
 
-                    SETCPUDATA([
-                        ...AddGraphData(CPUDATA, {
+                    SetCPUGraphData([
+                        ...AddGraphData(CPUGraphData, {
                             time: Date.now(),
                             value: responseJSON.cpu,
                         }),
                     ]);
 
-                    SETPLAYERDATA([...responseJSON.players]);
+                    SetPlayerGraphData(responseJSON.players);
+
+                    SetDiskStyle(
+                        GetStyle(
+                            Disk_Circle,
+                            (responseJSON.disk.used / responseJSON.disk.total) *
+                                100
+                        )
+                    );
+                    SetDiskText(
+                        `${responseJSON.disk.used}GB / ${responseJSON.disk.total}GB`
+                    );
+
+                    const playerStat =
+                        responseJSON.players[responseJSON.players.length - 1];
+                    SetPlayerStyle(
+                        GetStyle(
+                            Player_Circle,
+                            (playerStat.value / playerStat.total) * 100
+                        )
+                    );
+                    SetPlayerText(`${playerStat.value} / ${playerStat.total}`);
 
                     GetResources();
                 });
@@ -80,102 +132,94 @@ export default function PDashboard() {
         return graphData;
     }
 
+    function CalculateGraphWidth(gap) {
+        const graphHolder = document.getElementById("graph-holder");
+        const division = [40, 60];
+
+        if (graphHolder == null) {
+            return;
+        }
+
+        const width = graphHolder.offsetWidth;
+
+        SetIntegratedGraphWidth(width * (division[0] / 100) - 0.5 * gap);
+        SetGraphWidth(width * (division[1] / 100) - 0.5 * gap);
+    }
+
     return (
         <div className="page">
-            <Header />
-
             <div className="main">
                 <span className="server-list-button">
                     <img src="sidebar.png" />
                 </span>
                 <DashBoardSideBar />
                 <div className="dashboard-container">
-                    <div className="resource-grid">
-                        <IntegratedGraph
-                            gridArea="GRAPH"
-                            graphWidth={2040}
-                            graphHeight={250}
-                            graphData={IntegratedGraphData}
-                        />
+                    <div className="dashboard-header">
+                        <b></b>
+                    </div>
+                    <div className="dashboard-resource-container">
+                        <div className="dashboard-heading">RESOURCES</div>
 
-                        <Graph
-                            gridArea="PLAYERCOUNT"
-                            graphWidth={690}
-                            graphHeight={250}
-                            graphData={PLAYERDATA}
-                        />
+                        <div
+                            id="dashboard-resource-grid"
+                            className="dashboard-resource-grid"
+                        >
+                            <div
+                                className="dashboard-graph-holder"
+                                id="graph-holder"
+                            >
+                                <IntegratedGraph
+                                    gridArea="GRAPH"
+                                    graphWidth={IntegratedGraphWidth}
+                                    graphHeight={300}
+                                    graphData={IntegratedGraphData}
+                                    graphKeys={IntegratedGraphKeys}
+                                />
 
-                        <div style={{ gridArea: "test", background: "red" }}>
-                            yo
+                                <Graph
+                                    gridArea="PLAYERGRAPH"
+                                    graphWidth={GraphWidth}
+                                    graphHeight={300}
+                                    graphData={PlayerGraphData}
+                                />
+                            </div>
+
+                            <div className="dashboard-monitor-holder">
+                                <div>
+                                    <ProgressCircle
+                                        id="PLAYER_CIRCLE"
+                                        strokeStyle={Player_Style}
+                                        text={Player_Text}
+                                        name="Players"
+                                    />
+                                </div>
+
+                                <div style={{ marginLeft: "500px" }}>
+                                    <ProgressCircle
+                                        id="DISK_CIRCLE"
+                                        strokeStyle={Disk_Style}
+                                        text={Disk_Text}
+                                        name="Disk"
+                                    />
+                                </div>
+                            </div>
                         </div>
-
-                        <PlayerList gridArea="PLAYERLIST" />
                     </div>
 
-                    <h1 className="dashboard-heading">Servers</h1>
-                    <div className="server-list-container">
-                        <Serverlist />
+                    <div className="dashboard-list-container">
+                        <div className="dashboard-list-container-content">
+                            <div className="dashboard-list-container-content-div">
+                                <h1 className="dashboard-heading">Servers</h1>
+                                <Serverlist />
+                            </div>
+                            <div className="dashboard-list-container-content-div">
+                                <h1 className="dashboard-heading">Players</h1>
+                                <PlayerList gridArea="PLAYERLIST" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    );
-}
-
-function oldcirclestuff() {
-    // Hooks for progress circle text updates
-    const [CPU_Text, SetCPUText] = useState("loading");
-    const [Memory_Text, SetMemoryText] = useState("loading");
-    const [Disk_Text, SetDiskText] = useState("loading");
-    const [Player_Text, SetPlayerText] = useState("loading");
-
-    // Hooks for updating the progression of the circle via styling
-    const [CPU_Style, SetCPUStyle] = useState({});
-    const [Memory_Style, SetMemoryStyle] = useState({});
-    const [Disk_Style, SetDiskStyle] = useState({});
-    const [Player_Style, SetPlayerStyle] = useState({});
-
-    // Setup progress cirlce variables
-    var CPU_Circle = null;
-    var MEMORY_Circle = null;
-    var Disk_Circle = null;
-    var Player_Circle = null;
-    return <></>;
-}
-
-function x() {
-    return (
-        <>
-            <div style={{ gridArea: "CPU" }}>
-                <Graph graphData={CPUDATA} />
-            </div>
-
-            <div style={{ gridArea: "MEMORY" }}>
-                <Graph graphData={MEMORYDATA} />
-            </div>
-
-            <div style={{ gridArea: "DISK" }}>
-                <Graph graphData={CPUDATA} adaptive={true} />
-            </div>
-
-            <div style={{ gridArea: "PLAYERS" }}>
-                <Graph
-                    graphWidth="1000"
-                    graphHeight="650"
-                    graphData={PLAYERDATA}
-                />
-            </div>
-            <div style={{ gridArea: "TEST1" }}>
-                <Graph graphData={[]} />
-            </div>
-
-            <div style={{ gridArea: "TEST2" }}>
-                <Graph graphData={[]} />
-            </div>
-
-            <div style={{ gridArea: "TEST3" }}>
-                <Graph graphData={[]} />
-            </div>
-        </>
     );
 }

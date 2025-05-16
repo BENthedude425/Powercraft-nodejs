@@ -1,6 +1,6 @@
 import { React, useState, useEffect } from "react";
 
-import GetAPIAddr from "../assets/getAPIAddr";
+import { GetAPIAddr } from "../assets/APIactions";
 import GetStatusColor from "./CGetStatusColor";
 import { useMediaQuery } from "@mui/material";
 
@@ -16,19 +16,18 @@ function Server(props) {
                 Redirect(`server-dashboard/${props.serverID}`);
             }}
         >
-            <div>
-                <span className="status-light" style={statusStyle}></span>
-                {props.serverName}
+            <span>{props.serverName}</span>
+            <span>{props.serverVersion}</span>
+
+            <span>
+                {props.serverLauncher} {props.forgeVersion}
+            </span>
+
+            <span style={{ justifyContent: "flex-end" }}>
+                {props.serverStatus}
+                <div className="status-light" style={statusStyle}></div>
                 <img src={props.serverImg} />
-            </div>
-
-            <div>
-                <i>
-                    {props.serverLauncher} {props.serverVersion}
-                </i>
-            </div>
-
-            {props.serverStatus}
+            </span>
         </div>
     );
 }
@@ -46,6 +45,20 @@ function CreateServerButton() {
             }}
         >
             Create server
+        </div>
+    );
+}
+
+function ServerListHeader() {
+    return (
+        <div className="server-list-header">
+            <span>Name</span>
+
+            <span>Game version</span>
+
+            <span>Launcher</span>
+
+            <span>Status</span>
         </div>
     );
 }
@@ -104,23 +117,26 @@ function ServerList() {
     // populate with data
     return (
         <div className="server-list" id="server_list" style={ServerListStyle}>
+            <ServerListHeader />
             <ServerListButton />
 
-            <CreateServerButton />
-            {serverlistings.map((data) => {
-                const serverIMG = `${APIADDR}/images/servers/${data.server_icon_path}`;
-                return (
-                    <Server
-                        key={data.ID}
-                        serverID={data.ID}
-                        serverName={data.server_name}
-                        serverStatus={data.server_status}
-                        serverLauncher={data.server_launcher_type}
-                        serverVersion={data.server_version}
-                        serverImg={serverIMG}
-                    />
-                );
-            })}
+            <div className="server-list-scroll">
+                
+                {serverlistings.map((data) => {
+                    const serverIMG = `${APIADDR}/images/servers/${data.server_icon_path}`;
+                    return (
+                        <Server
+                            key={data.ID}
+                            serverID={data.ID}
+                            serverName={data.server_name}
+                            serverStatus={data.server_status}
+                            serverLauncher={data.server_launcher_type}
+                            serverVersion={data.server_version}
+                            serverImg={serverIMG}
+                        />
+                    );
+                })}
+            </div>
         </div>
     );
 }

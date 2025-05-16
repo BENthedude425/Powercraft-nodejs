@@ -1,66 +1,107 @@
-.dashboard-sidebar{
-    width: 10vw;
-    height: 100%;
-    
-    background-color: var(--PowercraftColorDark);
-}
-
-.dashboard-sidebar-bottom{
-    float: bottom;
-}
-
-.dashboard-sidebar a{
+.dashboard-sidebar {
     display: flex;
-    height: 2vh;
-    width: 9vw;
+    flex-direction: column;
 
-    margin-top: 1vh;
-    margin-left: auto;
-    margin-right: auto;
-    align-items: center;
-    
-    
-    color: rgb(223, 223, 223);
-}
+    width: 300px;
+    box-shadow: 0px 1px 10px 0px black;
+    background-color: var(--PowercraftColorDark);
 
-.dashboard-sidebar a:hover{
-    background-color: rgb(41, 115, 180);;
+    font-family: "Lucida Console", "Courier New", monospace;
     color: white;
 }
 
-.dashboard-sidebar-list{
+.dashboard-sidebar a {
+    display: flex;
+    flex-direction: column;
+
+    height: 3vh;
+    justify-content: center;
+}
+
+.dashboard-sidebar-option {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    text-align: center;
+
+    gap: 10px;
+
+    padding: 0.25vw;
+    user-select: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-sidebar-option:hover {
+    background-color: rgb(41, 115, 180);
+    color: white;
+}
+
+.dashboard-sidebar-top {
+    display: flex;
+
+    font-size: 1.5em;
+    width: 100%;
+    height: 5vh;
+
+    justify-content: center;
+    align-items: center;
+
+    box-shadow: 0px 0px 10px 0px var(--PowercraftColor);
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 2px solid var(--PowercraftColorOpaic);
+}
+
+.dashboard-sidebar-top img {
+    width: 45px;
+}
+
+.dashboard-sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    padding-bottom: 0.25vw;
+    height: 100%;
+}
+
+.dashboard-sidebar .icon {
+    display: inline;
+    width: 32px;
+    height: 32px;
+    filter: invert(100%);
+}
+
+.dashboard-sidebar-list {
     overflow-x: hidden;
     overflow-y: hidden;
 }
 
-.dashboard-sidebar span{
+.dashboard-sidebar span {
     display: flex;
     height: 3vh;
     align-items: center;
 }
 
-.sidebar-button img{
+.sidebar-button img {
     display: none;
     width: 32px;
     height: 32px;
 }
 
-.sidebar-button{
+.sidebar-button {
     display: none;
     position: absolute;
     right: -35px;
     top: 10px;
 }
 
-@media (max-width:480px)  { /* smartphones, Android phones, landscape iPhone */ 
-    .dashboard-sidebar{
+@media (max-width: 480px) {
+    /* smartphones, Android phones, landscape iPhone */
+    .dashboard-sidebar {
         position: absolute;
-        height: 100%;
     }
 
-    .sidebar-button img{
+    .sidebar-button img {
         display: block;
     }
-
-    
 }

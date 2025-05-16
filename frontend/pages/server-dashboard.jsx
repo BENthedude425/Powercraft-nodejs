@@ -2,7 +2,7 @@ import { React, useEffect, useState } from "react";
 import "../src/assets/server-dashboard.css";
 
 import Header from "../src/components/CHeader";
-import GetAPIAddr from "../src/assets/getAPIAddr";
+import {GetAPIAddr} from "../src/assets/APIactions";
 import GetStatusColor from "../src/components/CGetStatusColor";
 
 const APIADDR = GetAPIAddr();

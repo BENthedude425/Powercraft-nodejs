@@ -1,5 +1,5 @@
 import Cookies from "universal-cookie";
-import GetAPIAddr from "./assets/getAPIAddr";
+import {GetAPIAddr} from "../src/assets/APIactions";
 
 export default async function CheckAuth() {
     const APIADDR = GetAPIAddr();
