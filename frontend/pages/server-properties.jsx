@@ -1,5 +1,5 @@
 import { React, useState, useEffect } from "react";
-import GetAPIAddr from "../src/assets/getAPIAddr";
+import {GetAPIAddr} from "../src/assets/APIactions";
 
 import ServerProperties from "../src/components/CServerProperties";
 import Header from "../src/components/CHeader";

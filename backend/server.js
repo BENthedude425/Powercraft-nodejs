@@ -19,6 +19,7 @@ const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
 const md5 = require("md5");
+const { format, resolve } = require("path");
 
 var DATABASECONNECTION;
 var DATABASECONFIGS;
@@ -57,9 +58,24 @@ async function InitialiseDB() {
     return mysql2.createConnection(DATABASECONFIGS);
 }
 
+async function PlayerExists(UUID) {
+    return await new Promise((resolve, reject) => {
+        const sqlQuery = "SELECT * FROM players WHERE UUID = ?";
+
+        DATABASECONNECTION.query(sqlQuery, [UUID], (error, results) => {
+            if (error != null) {
+                console.log(error);
+                return;
+            }
+
+            resolve(results.length > 0);
+        });
+    });
+}
+
 async function CheckUserExists(username, password) {
     const SQLquery = "SELECT * FROM users WHERE username= ? AND password= ?";
-    hashedPass = HashNewPass(password);
+    hashedPass = HashNewPassword(password);
 
     return await new Promise((resolve, reject) => {
         DATABASECONNECTION.query(
@@ -82,6 +98,10 @@ async function CheckUserExists(username, password) {
 }
 
 async function JWTCheck(token) {
+    if (token == undefined) {
+        return false;
+    }
+
     const SQLquery = "SELECT * FROM users WHERE auth_token= ?";
     return new Promise((resolve, reject) => [
         DATABASECONNECTION.query(
@@ -98,8 +118,8 @@ async function JWTCheck(token) {
     ]);
 }
 
-function HashNewPass(pass) {
-    return crypto.createHash("sha256").update(pass).digest("hex");
+function HashNewPassword(password) {
+    return crypto.createHash("sha256").update(password).digest("hex");
 }
 
 function LoginUser(username, newToken, callback) {
@@ -238,10 +258,21 @@ async function Authenticate(req, res, next) {
     // Get token and check if the user has auth
     const token = GetCookie(req, "auth_token");
     const auth = await JWTCheck(token);
+    const IP = req.header("x-forwarded-for") || req.connection.remoteAddress;
+
+    // All paths that do not require authentication to use
+    const exemptPaths = ["/api/login"];
+    if (exemptPaths.includes(req.path)) {
+        next();
+        return;
+    }
 
     // If not auth'd then return
     if (!auth) {
-        modules.Log(FILEIDENT, `User failed authentication on API! INFO: ${token}`)
+        modules.Log(
+            FILEIDENT,
+            `User failed authentication on API! INFO: {token: ${token}, IP: ${IP}}}`
+        );
         res.json([false]);
         return;
     }
@@ -514,10 +545,36 @@ function RunServer(server) {
         } else {
             fs.appendFileSync(`${serverPath}/terminal.txt`, data);
         }
+
+        if (data.includes("UUID of player")) {
+            //[13:23:20 INFO]: UUID of player BENthedude425 is f1f70810-2304-4de3-9831-9abd2acdd249
+            var formattedData = data.split(":");
+            formattedData = formattedData[formattedData.length - 1];
+            formattedData = formattedData.split(" ");
+
+            var UUID = formattedData[formattedData.length - 1];
+            UUID = UUID.replace(/(\r\n|\n|\r)/gm, " ").trim();
+
+            AddPlayerToDatabase(UUID);
+        } else if (data.includes("joined the game")) {
+            // [14:01:28] [Server thread/INFO]: BENthedude425 joined the game
+            var formattedData = data.split(":");
+            formattedData = formattedData[formattedData.length - 1];
+            const username = formattedData.split(" ")[1];
+
+            UpdateUserJoined(username);
+        } else if (data.includes("left the game")) {
+            var formattedData = data.split(":");
+            formattedData = formattedData[formattedData.length - 1];
+            const username = formattedData.split(" ")[1];
+
+            UpdateUserLeft(username);
+        }
     });
 
-    serverProcess.stderr.on("data", (data) => {
-        fs.appendFileSync(`${serverPath}/terminal.txt`, data);
+    // Error handling
+    serverProcess.stderr.on("data", (error) => {
+        fs.appendFileSync(`${serverPath}/terminal.txt`, error);
     });
 
     serverProcess.on("exit", (code) => {
@@ -597,6 +654,13 @@ function CheckServerIsRunning(serverID) {
 }
 
 async function AddPlayerToDatabase(UUID) {
+    const playerExists = await PlayerExists(UUID);
+
+    if (playerExists) {
+        return;
+    }
+
+    modules.Log(FILEIDENT, `Adding UUID: ${UUID}`);
     const url = `https://mcuuid.net/?q=${UUID}`;
     const browser = await puppeteer.launch({ headless: true });
 
@@ -623,12 +687,12 @@ async function AddPlayerToDatabase(UUID) {
     const bodyurl = `https://crafthead.net/armor/body/${UUID}`;
     const headurl = `https://crafthead.net/avatar/${UUID}`;
     const sql = `INSERT INTO players(UUID, player_name, player_head_img_path, player_body_img_path, date_joined, last_played, time_played) VALUES(?, ?, ?, ?, ?, ?, ?)`;
-    const datetime = new Date();
-    const formattedDate = datetime.toISOString().split("T")[0];
+    const formattedDate = GetDate();
+    const dateTime = GetDateTime();
 
     DATABASECONNECTION.query(
         sql,
-        [UUID, username, headurl, bodyurl, formattedDate, null, null],
+        [UUID, username, headurl, bodyurl, formattedDate, dateTime, 0],
         (error) => {
             if (error != null) {
                 modules.Log(
@@ -640,6 +704,78 @@ async function AddPlayerToDatabase(UUID) {
     );
 
     return username;
+}
+
+function GetDate() {
+    const datetime = new Date();
+    return datetime.toISOString().split("T")[0];
+}
+
+function GetDateTime() {
+    const datetime = new Date();
+
+    const dateTimeStr =
+        datetime.getFullYear() +
+        "-" +
+        ("0" + (datetime.getMonth() + 1)).slice(-2) +
+        "-" +
+        ("0" + datetime.getDate()).slice(-2) +
+        " " +
+        ("0" + datetime.getHours()).slice(-2) +
+        ":" +
+        ("0" + datetime.getMinutes()).slice(-2) +
+        ":" +
+        ("0" + datetime.getSeconds()).slice(-2);
+
+    return dateTimeStr;
+}
+
+// Updates the database when a player has joined a server
+function UpdateUserJoined(username) {
+    const sqlQuery = "UPDATE players SET last_played = ? WHERE player_name = ?";
+    const dateTime = GetDateTime();
+
+    DATABASECONNECTION.query(sqlQuery, [dateTime, username], (error) => {
+        if (error != null) {
+            console.log(error);
+            return;
+        }
+    });
+}
+
+// Updates the database when a player has left a server
+async function UpdateUserLeft(username) {
+    const result = await new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(
+            `SELECT * FROM players WHERE player_name = "${username}"`,
+            (error, results) => {
+                if (error != null) {
+                    console.log(error);
+                    return;
+                }
+
+                resolve(results[0]);
+            }
+        );
+    });
+
+    const lastPlayedDate = new Date(result.last_played);
+    const logOutDate = new Date();
+
+    // Calculate the time spent in game and then add it to total time played
+    var timeDifference =
+        (logOutDate.getTime() - lastPlayedDate.getTime()) / 1000;
+    const timePlayed =
+        Math.round((timeDifference + parseInt(result.time_played)) * 100) / 100;
+
+    const sqlQuery = "UPDATE players SET time_played = ? WHERE player_name = ?";
+    // Update the total time played on the database
+    DATABASECONNECTION.query(sqlQuery, [timePlayed, username], (error) => {
+        if (error != null) {
+            console.log(error);
+            return;
+        }
+    });
 }
 
 app.get("/api/UUID/*", (req, res) => {
@@ -724,7 +860,7 @@ app.post("/api/create-user", async (req, res) => {
     }
 
     await new Promise((resolve, reject) => {
-        const hashedPass = HashNewPass(credentials.password);
+        const hashedPass = HashNewPassword(credentials.password);
         const date = new Date();
         const currentDate = `"${date.getUTCFullYear()}-${date.getMonth()}-${date.getDate()}"`;
         const currentTime = `"${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}"`;
@@ -812,12 +948,15 @@ app.post("/api/login", async (req, res) => {
         req.body.username,
         req.body.password
     );
+    const IP = req.header("x-forwarded-for") || req.connection.remoteAddress;
 
     // If user does not exist redirect to the login page
     if (!userExists) {
         res.redirect(`${FIXEDIPADDRESS}/login`);
         return;
     }
+
+    modules.log(FILEIDENT, `Successful login from IP:${IP}`);
 
     // Create new token and update the database
     const newToken = await GenerateAuthToken();
@@ -943,7 +1082,7 @@ async function GetServerProperties(serverID) {
 }
 
 app.get("/api/get-server-versions", async (req, res) => {
-    let contents = await readFileSync("Output.json", { encoding: "utf8" }); // Change to get the data from an endpoint
+    let contents = await readFileSync("Output.json", { encoding: "utf8" }); // Change to get the data from an endpoint hosted on git
     contents = JSON.parse(contents);
     res.jsonp(contents);
 });
@@ -1083,7 +1222,8 @@ app.get("/api/get-resources", async (req, res) => {
     var Disk = await diskCheck.check("/");
     Disk.total = Round(ToGiga(Disk.total), 2);
     Disk.free = Round(ToGiga(Disk.free), 2);
-    Disk.availble = Round(ToGiga(Disk.available), 2);
+    Disk.available = Round(ToGiga(Disk.available), 2);
+    Disk.used = Disk.total - Disk.free;
 
     Resources = {
         cpu: Cpu,

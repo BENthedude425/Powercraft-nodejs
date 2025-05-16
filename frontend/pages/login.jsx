@@ -1,7 +1,7 @@
 import { React, useEffect, useState } from "react";
 import "../src/assets/main.css";
 import {useNavigate} from "react-router-dom";
-import GetAPIAddr from "../src/assets/getAPIAddr";
+import {GetAPIAddr} from "../src/assets/APIactions";
 import CheckAuth from "../src/CheckAuth";
 
 export default function Plogin() {

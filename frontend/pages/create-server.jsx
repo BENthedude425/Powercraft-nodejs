@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "../src/components/CHeader";
-import GetAPIAddr from "../src/assets/getAPIAddr";
+import {GetAPIAddr} from "../src/assets/APIactions";
 import ServerProperties from "../src/components/CServerProperties";
 import "../src/assets/create-server.css";
 import "../src/assets/dashboard.css";

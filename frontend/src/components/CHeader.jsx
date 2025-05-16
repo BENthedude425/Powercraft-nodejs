@@ -1,12 +1,12 @@
 import { React } from "react";
-import Cookies from "universal-cookie";
+import {Logout} from "../assets/APIactions";
 
 import "../assets/header.css";
 
 export default function Header() {
     return (
         <div className="header">
-            <img src="../pictures/apple.png" href="/" onClick={Home} />
+            <img src="../apple.png" href="/" onClick={Home} />
             <div className="options">
                 <span
                     onClick={() => {
@@ -44,7 +44,7 @@ export default function Header() {
                 >
                     Configurations
                 </span>
-                <span onClick={LogOut}>Logout</span>
+                <span onClick={Logout}>Logout</span>
             </div>
         </div>
     );
@@ -59,14 +59,4 @@ function Home() {
     document.location.href = "/dashboard";
 }
 
-// Log the user out and redirect to login page
-function LogOut() {
-    // Check if the user wants to log out
-    if (!window.confirm("Are you sure you want to log out ?")) {
-        return;
-    }
-    const cookies = new Cookies();
 
-    cookies.set("auth_token", null);
-    document.location.href = "/login";
-}

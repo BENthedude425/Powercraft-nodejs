@@ -1,4 +1,4 @@
-import GetAPIAddr from "./getAPIAddr";
+import {GetAPIAddr} from "../assets/APIactions";
 
 function GatherForm(formID) {
     const form = new FormData();

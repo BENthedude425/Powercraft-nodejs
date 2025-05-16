@@ -1,5 +1,6 @@
 import "../assets/progress.css";
 
+// props [id, strokeStyle, name, text]
 function ProgressCircle(props) {
     return (
         <svg style={{ position: "absolute"}} width={250} height={250}>
