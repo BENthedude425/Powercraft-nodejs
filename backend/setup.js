@@ -17,7 +17,8 @@ const DEFAULTDBCONFIGS = {
 const TABLES = {
     UserRequests:
         "(username VARCHAR(255), password VARCHAR(255), date DATE, time TIME)",
-    Users: "(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))",
+    Users:
+        "(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))",
     Servers:
         "(ID INT(255), server_name VARCHAR(255), server_icon_path VARCHAR(255), server_executable_path VARCHAR(255), server_launcher_type VARCHAR(255), server_version VARCHAR(255), forge_release VARCHAR(255), server_status VARCHAR(255))",
     Players:
@@ -54,40 +55,7 @@ async function Setup() {
     //DATABASECONFIGS = await GetDataBaseConfigs();
     DATABASECONFIGS = await modules.GetParsedFile(FILES.Database_configs[0]);
 
-    await new Promise((resolve, reject) => {
-        CreateDataBase(
-            DATABASECONFIGS.database,
-            async (err, results, fields) => {
-                if (err && results.length == 0) {
-                    modules.Log(
-                        FILEIDENT,
-                        ("Database could not be created. Exiting setup\n", err)
-                    );
-                    return;
-                }
-
-                modules.Log(FILEIDENT, "Checking all tables are existing");
-                // Connect to the sql server under the database
-                DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS);
-
-                const TableKeys = Object.keys(TABLES);
-                for (let i = 0; i < TableKeys.length; i++) {
-                    tableCreated = false;
-                    selectedKey = TableKeys[i];
-
-                    await new Promise((resolve, reject) => {
-                        CheckTableExists(resolve, selectedKey);
-                    });
-                }
-
-                if ((await CheckUserExists()) == false) {
-                    await CreateRootUser(DATABASECONNECTION);
-                }
-
-                resolve();
-            }
-        );
-    });
+    await CreateDataBase(DATABASECONFIGS.database);
 }
 
 async function CheckFilesExist() {
@@ -123,24 +91,19 @@ async function GetDataBaseConfigs() {
 }
 
 async function CheckUserExists(username) {
-    exists = false;
-    query = "SELECT * FROM users";
+    const query = "SELECT * FROM users WHERE username = ?";
 
-    if (username != undefined) {
-        query += ` WHERE username = '${username}'`;
-    }
-
-    await new Promise((resolve, reject) => {
-        DATABASECONNECTION.query(query, (err, results, fields) => {
+    return await new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(query, [username], (err, results, fields) => {
             if (err) {
                 modules.Log(FILEIDENT, err);
             }
-            exists = results.length > 0;
-            resolve();
+
+            console.log(results);
+
+            resolve(results.length > 0);
         });
     });
-
-    return exists;
 }
 
 function ValidateUserCreds(credentials) {
@@ -176,18 +139,52 @@ function WhiteSpace(numberOfLines) {
 
 //---Database Creation---\\\
 
-function CreateDataBase(databaseName, callback) {
+async function CreateDataBase(databaseName) {
     TempDBConfigs = Object.assign({}, DATABASECONFIGS);
     delete TempDBConfigs["database"];
 
     TempDBCONN = mysql2.createConnection(TempDBConfigs);
 
-    TempDBCONN.query(
-        String("CREATE DATABASE IF NOT EXISTS " + databaseName),
-        callback
-    );
+    await new Promise(async (resolve, reject) => {
+        TempDBCONN.query(
+            String("CREATE DATABASE IF NOT EXISTS " + databaseName),
+            async (err, results, fields) => {
+                if (err) {
+                    if (results.length > 0) {
+                        modules.Log(
+                            FILEIDENT,
+                            ("Database could not be created. Exiting setup\n", err)
+                        );
+                    }
+
+                    modules.Log(FILEIDENT, `There was an error: ${err}`);
+                }
+
+                resolve();
+            }
+        );
+    });
 
     TempDBCONN.end();
+
+    modules.Log(FILEIDENT, "Checking all tables are existing");
+    // Connect to the sql server under the database
+    DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS);
+
+    const TableKeys = Object.keys(TABLES);
+    for (let i = 0; i < TableKeys.length; i++) {
+        tableCreated = false;
+        selectedKey = TableKeys[i];
+
+        await new Promise((resolve, reject) => {
+            CheckTableExists(resolve, selectedKey);
+        });
+    }
+
+    if ((await CheckUserExists("root")) == false) {
+        await CreateRootUser(DATABASECONNECTION);
+    }
+
     modules.Log(
         FILEIDENT,
         `The ${databaseName} database has been loaded successfully`
@@ -203,7 +200,7 @@ async function CreateRootUser(dbConnection) {
         return;
     }
 
-    if (CheckUserExists(credentials.username)) {
+    if (await CheckUserExists(credentials.username)) {
         const overWrite = GetOverWriteFromUser();
         if (!overWrite) {
             return;
@@ -232,7 +229,11 @@ async function CreateRootUser(dbConnection) {
 
     dbConnection.query(
         `INSERT INTO users VALUES (0, '${credentials.username}', '${hashedPass}', 1, '')`,
-        callback
+        (error) =>{
+            if(error != null){
+                modules.Log(FILEIDENT, error)
+            }
+        }
     );
     return false;
 }

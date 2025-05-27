@@ -14,6 +14,9 @@ export default function PDashboard() {
     const [GraphWidth, SetGraphWidth] = useState(300);
     const [IntegratedGraphWidth, SetIntegratedGraphWidth] = useState(300);
 
+    const [GraphHeight, SetGraphHeight] = useState(100);
+    const [IntegratedGraphHeight, SetIntegratedGraphHeight] = useState(100);
+
     // Graph data for integrated graph
     const [CPUGraphData, SetCPUGraphData] = useState([]);
     const [MemoryGraphData, SetMemoryGraphData] = useState([]);
@@ -144,6 +147,10 @@ export default function PDashboard() {
 
         SetIntegratedGraphWidth(width * (division[0] / 100) - 0.5 * gap);
         SetGraphWidth(width * (division[1] / 100) - 0.5 * gap);
+    }
+
+    function CalculateGraphHeight(percentage){
+
     }
 
     return (

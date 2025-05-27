@@ -1,7 +1,6 @@
 import { React, Component } from "react";
 
 import "../assets/graph.css";
-import { Square } from "@mui/icons-material";
 
 // Calculate shapes to create shadow below graph line
 function CalculateShadow(
