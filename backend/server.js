@@ -30,9 +30,10 @@ const PORT = 8081;
 const FILEIDENT = "server.js";
 
 // Needed for redirections on the frontend
-const FIXEDIPADDRESS = "http://test.powercraft.uk:81";
+//const FIXEDIPADDRESS = "http://test.powercraft.uk:81";
 //const FIXEDIPADDRESS = "http://176.24.124.59:81";
 //const FIXEDIPADDRESS = "http://192.168.0.15:81";
+const FIXEDIPADDRESS = "http://localhost:81";
 
 // An object containing all of the running server processes using serverID's as keys
 const SERVERPROCESSES = {};
@@ -956,7 +957,7 @@ app.post("/api/login", async (req, res) => {
         return;
     }
 
-    modules.log(FILEIDENT, `Successful login from IP:${IP}`);
+    modules.Log(FILEIDENT, `Successful login from IP:${IP}`);
 
     // Create new token and update the database
     const newToken = await GenerateAuthToken();

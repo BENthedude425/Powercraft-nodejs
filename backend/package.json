@@ -29,6 +29,7 @@
     "mysql2": "^3.10.0",
     "nexe": "^1.1.6",
     "node-fetch": "^2.6.7",
+    "nodemon": "^3.1.10",
     "os-utils": "^0.0.14",
     "puppeteer": "^23.11.1",
     "puppeteer-core": "^1.11.0",
