@@ -59,6 +59,7 @@ export default function PDashboard() {
             initilised.current = true;
             InitProgressCircles();
             CalculateGraphWidth(20);
+            CalculateGraphHeight(100);
         }
 
         GetResources();
@@ -150,7 +151,17 @@ export default function PDashboard() {
     }
 
     function CalculateGraphHeight(percentage){
-
+        const graphHolder = document.getElementById("graph-holder");
+    
+        if(graphHolder == null){
+            return;
+        }
+        
+        const height = graphHolder.offsetHeight;
+        const multiplier = percentage / 100;
+        console.log(height)
+        SetIntegratedGraphHeight(height * multiplier)
+        SetGraphHeight(height * multiplier);
     }
 
     return (
@@ -178,7 +189,7 @@ export default function PDashboard() {
                                 <IntegratedGraph
                                     gridArea="GRAPH"
                                     graphWidth={IntegratedGraphWidth}
-                                    graphHeight={300}
+                                    graphHeight={IntegratedGraphHeight}
                                     graphData={IntegratedGraphData}
                                     graphKeys={IntegratedGraphKeys}
                                 />
@@ -186,7 +197,7 @@ export default function PDashboard() {
                                 <Graph
                                     gridArea="PLAYERGRAPH"
                                     graphWidth={GraphWidth}
-                                    graphHeight={300}
+                                    graphHeight={GraphHeight}
                                     graphData={PlayerGraphData}
                                 />
                             </div>
