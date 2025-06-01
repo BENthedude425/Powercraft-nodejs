@@ -26,7 +26,7 @@
 .player-list-header span{
     flex-grow: 1;
     justify-content: center;
-    font-size: 1.4em;
+    font-size: 1em;
 }
 
 .player-list-scroll{

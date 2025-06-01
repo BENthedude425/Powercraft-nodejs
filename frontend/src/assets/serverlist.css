@@ -9,7 +9,7 @@
     border-radius: 5px;
 
     overflow-y: hidden;
-    height: 65%;
+    height: 100%;
 }
 
 .server-list-header{
@@ -20,13 +20,13 @@
     border-bottom: 2px solid var(--OpaicGrey);
 
     width: 100%;
-    height: 5%;
+    height: 10%;
 }
 
 .server-list-header span{
     flex-grow: 1;
     justify-content: center;
-    font-size: 1.4em;
+    font-size: 1em;
 }
 
 .server-list-options {
@@ -63,7 +63,7 @@
     flex: 1;
     overflow-x: hidden;
     justify-content: center;
-    border-right: 1px solid blakc;
+    border-right: 1px solid black;
 }
 
 .server-listing div:nth-child(odd){

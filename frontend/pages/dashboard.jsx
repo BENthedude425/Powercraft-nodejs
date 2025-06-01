@@ -65,6 +65,11 @@ export default function PDashboard() {
         GetResources();
     }, []);
 
+    window.addEventListener("resize", () =>{
+        CalculateGraphWidth(20);
+        CalculateGraphHeight(100)
+    });
+
     function InitProgressCircles() {
         Disk_Circle = document.getElementById("DISK_CIRCLE");
         Disk_Circle.circumference = 2 * Math.PI * Disk_Circle.r.baseVal.value;
@@ -138,7 +143,7 @@ export default function PDashboard() {
 
     function CalculateGraphWidth(gap) {
         const graphHolder = document.getElementById("graph-holder");
-        const division = [40, 60];
+        const division = [50, 50];
 
         if (graphHolder == null) {
             return;

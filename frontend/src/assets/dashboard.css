@@ -29,11 +29,36 @@
 }
 
 .dashboard-header{
-    height: 4vh;
-
+    display: flex;
+    flex-direction: row;
+    height: 40px;
 
     background-color: var(--PowercraftColorDark);
     box-shadow: 0px 1px 5px 0px;
+}
+
+.dashboard-header img{
+    width: 32px;
+}
+
+.dashboard-header span{
+    color: white;
+    border-right: 1px solid white;
+    border-radius: 2px;
+    height: auto;
+    padding: 1%;
+}
+
+.dashboard-header b{
+    color: white;
+    text-align: end;
+}
+
+.dashboard-header .options{
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+
 }
 
 .dashboard-list-container {

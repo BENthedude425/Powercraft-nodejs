@@ -37,6 +37,14 @@ function FormatLastPlayed(date){
 function PlayerListing(props) {
     const data = props.data;
 
+    if(data == null){
+        return(
+            <div className="player-listing">
+                <span>No players have played yet</span>
+            </div>
+        )
+    }
+
     if (data.last_played == null) {
         data.last_played = "Has not played yet..";
     }
@@ -61,6 +69,12 @@ export default function PlayerList(props) {
             credentials: "include",
         }).then((response) => {
             response.json().then((responseJSON) => {
+                if(responseJSON.length == 0){
+                    SETPLAYERSLIST([null])
+                    return;
+                }
+
+
                 SETPLAYERSLIST(responseJSON);
             });
         });

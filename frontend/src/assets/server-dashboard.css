@@ -1,127 +1,126 @@
+body {
+  font-family: "Lucida Console", "Courier New", monospace;
+}
+
 .flexbox {
-    display: flex;
-    flex-direction: row;
+  display: flex;
+  flex-direction: row;
 
-    gap: 2vw;
+  gap: 2vw;
 
-    padding: 0.5vw;
+  padding: 0.5vw;
 }
 
-.panel{
-    width: 40vw;
-    padding: 1%;
+.panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--OpaicGrey);
 
-    color: var(--PowercraftColor);
-    font-size: 1vw;
-
-    background-color: var(--OpaicGrey);
-    border: 2px var(--OpaicGrey) solid ;
-    border-radius: 5px;
+  margin-top: 3%;
+  height: 5%;
+  padding: 0.5%;
+  color: var(--PowercraftColor);
+  font-size: 1vw;
 }
 
-.panel_label span{
-    
-    display: block;
+.end {
+  float: right;
 }
 
-.panel b{
-    position: relative;
-}
-
-.panel div:nth-of-type(even){
-    background: var(--OpaicGrey)
+.panel b {
+  font-size: 1.5em;
+  position: relative;
 }
 
 .server_terminal {
-    background-color: black;
-    color: white;
+  background-color: black;
+  color: white;
 
-    width: 50vw;
-    height: 60vh;
+  width: 50vw;
+  height: 60vh;
 
-    display: inline-block;
+  display: flex;
+  flex-direction: column;
 
-    overflow-y: scroll;
-    overflow-x: wrap;
+  overflow-y: scroll;
+  overflow-x: wrap;
 
-    padding: 0.5%;
+  padding: 0.5%;
 }
 ::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .server_terminal_input {
-    border: none;
-    border-top: 1px white solid;
+  border: none;
+  border-top: 1px white solid;
 
-    width: 150px;
+  width: 150px;
 
-    background-color: grey;
-    color: white;
+  background-color: grey;
+  color: white;
 
-    font-size: 15px;
+  font-size: 15px;
 }
 
 .terminal_text:hover {
-    background-color: yellow;
-    color: purple;
+  background-color: yellow;
+  color: purple;
 }
 
 .control_panel {
-    margin-top: 2vh;
-    height: 20%;
+  margin-top: 2vh;
+  height: 20%;
 
-
-    background-color: var(--);
+  background-color: var(--);
 }
 
 .control_panel button {
-    width: 4vw;
-    height: 2vh;
+  width: 4vw;
+  height: 2vh;
 
-    font-size: 15px;
-    color: white;
+  font-size: 15px;
+  color: white;
 }
 
 .start_button {
-    border: 1px solid rgb(0, 205, 0);
-    background-color: rgb(10, 245, 10);
+  border: 1px solid rgb(0, 205, 0);
+  background-color: rgb(10, 245, 10);
 }
 
 .restart_button {
-    border: 1px solid #c3830c;
-    background-color: #ffa500;
-    width: 2vw;
-    border-radius: 7px;
+  border: 1px solid #c3830c;
+  background-color: #ffa500;
+  width: 2vw;
+  border-radius: 7px;
 }
 
 .stop_button {
-    border: 1px solid #b60202;
-    background-color: #ff0000;
+  border: 1px solid #b60202;
+  background-color: #ff0000;
 
-    width: 2vw;
-    border-radius: 7px;
+  width: 2vw;
+  border-radius: 7px;
 }
 
 button {
-    width: 2vw;
-    border-radius: 7px;
+  width: 2vw;
+  border-radius: 7px;
 }
 
+@media (max-width: 900px) {
+  .flexbox {
+    padding: 2vw;
+    flex-direction: column;
+  }
 
-@media (max-width: 900px){
-    .flexbox{
-        padding: 2vw;
-        flex-direction: column;
-    }
+  .server_terminal {
+    width: 99%;
+    font-size: 2vw;
+  }
 
-    .server_terminal{
-        width: 99%;
-        font-size: 2vw;
-    }
-
-    .panel{
-        width: 97%;
-        font-size: 5vw;
-    }
+  .panel {
+    width: 97%;
+    font-size: 5vw;
+  }
 }

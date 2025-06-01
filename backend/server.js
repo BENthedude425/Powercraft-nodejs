@@ -1122,7 +1122,7 @@ app.get("/api/get-server-terminal*", async (req, res) => {
             fileContents = fs.readFileSync(path);
             fileContents = fileContents.toString().split("\n");
         } catch {
-            fileContents = "Terminal is empty";
+            fileContents = "";
             fs.writeFileSync(path, fileContents);
         }
 
