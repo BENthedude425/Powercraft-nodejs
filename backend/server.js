@@ -1,4 +1,5 @@
 const express = require("express");
+const https = require("follow-redirects").https;
 const puppeteer = require("puppeteer");
 const cors = require("cors");
 const mysql2 = require("mysql2");
@@ -19,21 +20,14 @@ const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
 const md5 = require("md5");
-const { format, resolve } = require("path");
 
 var DATABASECONNECTION;
 var DATABASECONFIGS;
 var FILEPATHS;
 
 const DEVMODE = true;
-const PORT = 8081;
+const PORT = 8080;
 const FILEIDENT = "server.js";
-
-// Needed for redirections on the frontend
-//const FIXEDIPADDRESS = "http://test.powercraft.uk:81";
-//const FIXEDIPADDRESS = "http://176.24.124.59:81";
-//const FIXEDIPADDRESS = "http://192.168.0.15:81";
-const FIXEDIPADDRESS = "http://localhost:81";
 
 // An object containing all of the running server processes using serverID's as keys
 const SERVERPROCESSES = {};
@@ -104,7 +98,7 @@ async function JWTCheck(token) {
     }
 
     const SQLquery = "SELECT * FROM users WHERE auth_token= ?";
-    return new Promise((resolve, reject) => [
+    return await new Promise((resolve, reject) => {
         DATABASECONNECTION.query(
             SQLquery,
             [token],
@@ -115,8 +109,8 @@ async function JWTCheck(token) {
 
                 resolve(results.length > 0);
             }
-        ),
-    ]);
+        );
+    });
 }
 
 function HashNewPassword(password) {
@@ -202,21 +196,82 @@ function ReplaceAll(string, searchStr, replaceStr) {
 async function LoadConfigs() {
     // Get the db configs from the save file#
     FILEPATHS = await modules.GetFilePaths();
+
     DATABASECONFIGS = await modules.GetParsedFile(
         FILEPATHS["Database_configs"]
     );
 }
 
+async function CheckServerVersions() {
+    const TMPFile = await readFileSync("ServerVersionsTMP.json");
+    var oldFile = "";
+
+    if (fs.existsSync("ServerVersions.json")) {
+        oldFile = await readFileSync("ServerVersions.json");
+    }
+
+    // Update file
+    if (oldFile != TMPFile) {
+        await writeFileSync("ServerVersions.json", TMPFile);
+    }
+
+    // Delete TMP file
+    await fs.unlink("ServerVersionsTMP.json", (err) => {
+        if (err != null) {
+            modules.Log(
+                FILEIDENT,
+                `There was an error removing ServerVersions Temp file. ${err}`
+            );
+        }
+    });
+}
+
+async function FetchServerVersions() {
+    return await new Promise((resolve, reject) => {
+        const file = fs.createWriteStream("ServerVersionsTMP.json");
+        const request = https.get(
+            "https://raw.githubusercontent.com/BENthedude425/Powercraft_webscraper/refs/heads/main/Output.json",
+            function (response) {
+                response.pipe(file);
+
+                // after download completed close filestream
+                file.on("finish", () => {
+                    file.close();
+                    resolve(false);
+                });
+
+                file.on("failed", () => {
+                    file.close();
+                    reject(true);
+                });
+            }
+        );
+    });
+}
+
 async function INIT() {
     modules.Log(FILEIDENT, "INIT", true);
-    DATABASECONNECTION = await InitialiseDB();
     await Setup();
+
+    DATABASECONNECTION = await InitialiseDB();
 
     await SetAllServersStopped();
 
     setInterval(() => {
         GetAllPlayers();
     }, 5000);
+
+    let failed = await FetchServerVersions();
+
+    if (failed) {
+        modules.Log(
+            FILEIDENT,
+            "Failed to fetch the server versions file from github. You may not be able to create new servers with powercraft until this issue is resolved."
+        );
+    } else {
+        await CheckServerVersions();
+    }
+
     modules.Log(FILEIDENT, "FINISHED INIT", true);
 }
 
@@ -286,7 +341,7 @@ async function Authenticate(req, res, next) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({ credentials: true, origin: FIXEDIPADDRESS }));
+app.use(cors({ origin: "http://minecraft.powercraft.uk", credentials: true }));
 app.use(express.static("public"));
 app.use(fileUpload());
 app.use(Authenticate);
@@ -816,7 +871,7 @@ app.post("/api/create-user", async (req, res) => {
     // Check if the username is taken
     var promiseFailed = false;
 
-    const SQLquery = "SELECT * FROM USERS WHERE username= ?";
+    const SQLquery = "SELECT * FROM users WHERE username= ?";
     await new Promise((resolve, reject) => {
         DATABASECONNECTION.query(
             SQLquery,
@@ -885,10 +940,11 @@ app.post("/api/create-user", async (req, res) => {
     });
 
     modules.Log(FILEIDENT, "user request submitted");
+
     res.json([
         true,
         "User request submitted. Please contact an admin to approve the request",
-        `${FIXEDIPADDRESS}/login`,
+        `${req.hostname}/login`,
     ]);
 });
 
@@ -906,7 +962,7 @@ app.post("/api/create-server", async (req, res) => {
         );
     }
 
-    res.redirect(`${FIXEDIPADDRESS}/dashboard`);
+    res.redirect(`${req.hostname}/dashboard`);
 
     // Create directory and download files and return path to the executable
     const launcherFileName = await CreateServer(serverSettings, properties);
@@ -953,7 +1009,7 @@ app.post("/api/login", async (req, res) => {
 
     // If user does not exist redirect to the login page
     if (!userExists) {
-        res.redirect(`${FIXEDIPADDRESS}/login`);
+        res.redirect(`${req.hostname}/login`);
         return;
     }
 
@@ -969,8 +1025,9 @@ app.post("/api/login", async (req, res) => {
         }
 
         // Once updated set the new token and redirect to the dashboard
+        res.setHeader("Access-Control-Allow-Credentials", true);
         res.cookie("auth_token", newToken, { maxAge: 1000 * 60 * 60 * 24 }); // maxAge 1 Day
-        res.redirect(`${FIXEDIPADDRESS}/dashboard`);
+        res.redirect(`http://${req.hostname}/dashboard`);
     });
 });
 
@@ -1083,7 +1140,9 @@ async function GetServerProperties(serverID) {
 }
 
 app.get("/api/get-server-versions", async (req, res) => {
-    let contents = await readFileSync("Output.json", { encoding: "utf8" }); // Change to get the data from an endpoint hosted on git
+    let contents = await readFileSync("ServerVersions.json", {
+        encoding: "utf8",
+    });
     contents = JSON.parse(contents);
     res.jsonp(contents);
 });
@@ -1313,7 +1372,7 @@ app.post("/api/set-server-properties*", async (req, res) => {
     const serverPropertiesPath =
         GetServerPath(server.server_name) + "/server.properties";
     writeFileSync(serverPropertiesPath, propertiesString);
-    res.redirect(`${FIXEDIPADDRESS}/server-dashboard/${serverID}`);
+    res.redirect(`${req.hostname}/server-dashboard/${serverID}`);
 });
 
 app.get("/api/input-server-terminal*", async (req, res) => {

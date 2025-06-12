@@ -7,9 +7,7 @@ export default async function CheckAuth() {
         const cookies = new Cookies();
         const cookie = cookies.get("auth_token");
 
-        fetch(`${APIADDR}/api/authenticate/${cookie}`, {
-            credentials: "include",
-        }).then(function (response) {
+        fetch(`${APIADDR}/api/authenticate/${cookie}`,{credentials: "include"}).then(function (response) {
             response.json().then(function (text) {
                 resolve(text[0]);
             });

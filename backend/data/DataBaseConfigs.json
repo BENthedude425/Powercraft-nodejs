@@ -1,1 +1,6 @@
-{"host":"localhost","user":"root","password":"powercrafttest","database":"powercraft"}
+{
+    "host": "localhost",
+    "user": "powercraft_server",
+    "password": "powercraft123",
+    "database": "powercraft"
+}

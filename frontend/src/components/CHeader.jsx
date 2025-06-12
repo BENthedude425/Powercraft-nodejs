@@ -1,4 +1,3 @@
-import { React } from "react";
 import { Logout } from "../assets/APIactions";
 
 import "../assets/dashboard.css";

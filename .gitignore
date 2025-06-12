@@ -5,6 +5,17 @@
 /backend/images/*
 !/backend/images/default.png
 
+# Database configurations
+/backend/data/DataBaseConfigs.json
+
+# Server versions fetched from github
+/backend/ServerVersions.json
+/backend/ServerVersionsTMP.json
+
+# Builds
+/backend/builds
+/frontend/builds
+
 # Frontend
 /frontend/pages/testpage.jsx
 

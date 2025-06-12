@@ -15,13 +15,12 @@ const DEFAULTDBCONFIGS = {
 };
 
 const TABLES = {
-    UserRequests:
+    userrequests:
         "(username VARCHAR(255), password VARCHAR(255), date DATE, time TIME)",
-    Users:
-        "(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))",
-    Servers:
+    users: "(ID INT(255), username VARCHAR(255), password VARCHAR(255), permission_level INT(4), auth_token VARCHAR(255))",
+    servers:
         "(ID INT(255), server_name VARCHAR(255), server_icon_path VARCHAR(255), server_executable_path VARCHAR(255), server_launcher_type VARCHAR(255), server_version VARCHAR(255), forge_release VARCHAR(255), server_status VARCHAR(255))",
-    Players:
+    players:
         "(UUID VARCHAR(36), player_name VARCHAR(255), player_head_img_path VARCHAR(255), player_body_img_path VARCHAR(255), date_joined DATE, last_played DATETIME, time_played VARCHAR(15))",
 };
 
@@ -38,24 +37,27 @@ var DATABASECONFIGS;
 var DATABASECONNECTION;
 
 async function Setup() {
-    fs.mkdir(FILEPREFIX, (err) => {
-        return;
+    return await new Promise(async (resolve, reject) => {
+        fs.mkdir(FILEPREFIX, (err) => {
+            return;
+        });
+
+        // from modules
+        FILEPATHS_FILE = await modules.GetFilePath();
+        //FILES = await modules.GetFilePaths();
+
+        const err = await CheckFilesExist();
+        if (err) {
+            modules.Log(FILEIDENT, err);
+            return;
+        }
+
+        //DATABASECONFIGS = await GetDataBaseConfigs();
+        DATABASECONFIGS = await GetDataBaseConfigs();
+
+        await CreateDataBase(DATABASECONFIGS.database);
+        resolve();
     });
-
-    // from modules
-    FILEPATHS_FILE = await modules.GetFilePath();
-    //FILES = await modules.GetFilePaths();
-
-    const err = await CheckFilesExist();
-    if (err) {
-        modules.Log(FILEIDENT, err);
-        return;
-    }
-
-    //DATABASECONFIGS = await GetDataBaseConfigs();
-    DATABASECONFIGS = await modules.GetParsedFile(FILES.Database_configs[0]);
-
-    await CreateDataBase(DATABASECONFIGS.database);
 }
 
 async function CheckFilesExist() {
@@ -98,8 +100,6 @@ async function CheckUserExists(username) {
             if (err) {
                 modules.Log(FILEIDENT, err);
             }
-
-            console.log(results);
 
             resolve(results.length > 0);
         });
@@ -147,17 +147,16 @@ async function CreateDataBase(databaseName) {
 
     await new Promise(async (resolve, reject) => {
         TempDBCONN.query(
-            String("CREATE DATABASE IF NOT EXISTS " + databaseName),
-            async (err, results, fields) => {
+            `CREATE DATABASE IF NOT EXISTS ${databaseName}`,
+            async (err) => {
                 if (err) {
-                    if (results.length > 0) {
-                        modules.Log(
-                            FILEIDENT,
-                            ("Database could not be created. Exiting setup\n", err)
-                        );
-                    }
+                    modules.Log(
+                        FILEIDENT,
+                        `There was an error creating the database: ${err}`
+                    );
 
-                    modules.Log(FILEIDENT, `There was an error: ${err}`);
+                    modules.Log(FILEIDENT, `Exiting....`);
+                    process.exit(1);
                 }
 
                 resolve();
@@ -175,10 +174,8 @@ async function CreateDataBase(databaseName) {
     for (let i = 0; i < TableKeys.length; i++) {
         tableCreated = false;
         selectedKey = TableKeys[i];
-
-        await new Promise((resolve, reject) => {
-            CheckTableExists(resolve, selectedKey);
-        });
+        modules.Log(FILEIDENT, `Checking: ${selectedKey}`);
+        await CheckTableExists(selectedKey);
     }
 
     if ((await CheckUserExists("root")) == false) {
@@ -229,23 +226,31 @@ async function CreateRootUser(dbConnection) {
 
     dbConnection.query(
         `INSERT INTO users VALUES (0, '${credentials.username}', '${hashedPass}', 1, '')`,
-        (error) =>{
-            if(error != null){
-                modules.Log(FILEIDENT, error)
+        (error) => {
+            if (error != null) {
+                modules.Log(FILEIDENT, error);
             }
         }
     );
     return false;
 }
 
-function CheckTableExists(resolve, selectedKey) {
-    DATABASECONNECTION.query(
-        `CREATE TABLE IF NOT EXISTS ${selectedKey} ${TABLES[selectedKey]}`,
-        (err, results, fields) => {
-            if (err) modules.Log(FILEIDENT, err);
-            resolve();
-        }
-    );
+async function CheckTableExists(selectedKey) {
+    return await new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(
+            `CREATE TABLE IF NOT EXISTS ${selectedKey} ${TABLES[selectedKey]}`,
+            (err, results, fields) => {
+                if (err) {
+                    modules.Log(
+                        FILEIDENT,
+                        `There was an error checking table: ${err}`
+                    );
+                }
+
+                resolve();
+            }
+        );
+    });
 }
 
 //---Get user input -- \\
@@ -308,13 +313,13 @@ function GetDataBaseConfigsFromUser() {
         {
             type: "input",
             name: "user",
-            default: "powercraft_Server",
+            default: "powercraft_server",
             message: "Enter username of root user",
         },
         {
             type: "input",
             name: "password",
-            default: "powercraft_pwd",
+            default: "powercraft123",
             message: "Enter password for root user",
         },
         {

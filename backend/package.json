@@ -21,6 +21,7 @@
     "esbuild": "^0.25.2",
     "express": "^4.19.2",
     "express-fileupload": "^1.5.1",
+    "follow-redirects": "^1.15.9",
     "inquirer": "^8.2.4",
     "jsdom": "^24.1.1",
     "md5": "^2.3.0",
@@ -42,6 +43,11 @@
       "data/*",
       "Files.json"
     ],
-    "delay": "1"
+    "delay": "1",
+    "pkg": {
+      "targets": [
+        "node20"
+      ]
+    }
   }
 }

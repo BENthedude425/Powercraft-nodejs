@@ -1,10 +1,8 @@
 import { React } from "react";
 import "../src/assets/main.css";
-import {GetAPIAddr} from "../src/assets/APIactions";
 import SendForm from "../src/assets/sendForm"
 
 function Pcreate_user() {
-    const APIADDR = GetAPIAddr();
     return (
         <div className="page" style={{ display: "flex" }}>
             <div className="container_1">

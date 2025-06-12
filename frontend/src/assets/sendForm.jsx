@@ -3,7 +3,6 @@ import {GetAPIAddr} from "../assets/APIactions";
 function GatherForm(formID) {
     const form = new FormData();
     const formElement = document.getElementById(formID);
-    const children = formElement.children;
 
     for (const child of formElement.children) {
         if (child.tagName == "INPUT") {
@@ -24,11 +23,14 @@ function SendForm(formID, formPath) {
 
     xhr.open("POST", `${APIADDR}${formPath}`);
     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    xhr.setRequestHeader("Access-Control-Allow-Origin", true);
+    xhr.setRequestHeader("Access-Control-Allow-Credentials", true)
     xhr.send(new URLSearchParams(formData));
 
     xhr.onreadystatechange = function () {
         if (xhr.readyState == 4) {
             const response = xhr.responseText;
+            console.log(response)
             const responseJSON = JSON.parse(response);
             console.log(responseJSON);
             if (responseJSON[0]) {

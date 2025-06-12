@@ -5,17 +5,17 @@ const MINECRAFTPROPERTIES = {
     "enable-jmx-monitoring": [false, true],
     "rcon.port": 25575,
     "level-seed": "",
-    "gamemode": ["survival", "creative", "adventure"],
+    gamemode: ["survival", "creative", "adventure"],
     "enable-command-block": [false, true],
     "enable-query": [false, true],
     "enforce-secure-profiles": [true, false],
     "level-name": "world",
-    "motd": "A powercraft hosted server!",
+    motd: "A powercraft hosted server!",
     "query-port": 25565,
-    "pvp": [true, false],
+    pvp: [true, false],
     "generate-structures": [true, false],
     "max-chained-neighbor-updates": 1000000,
-    "difficulty": ["easy", "medium", "hard", "peaceful"],
+    difficulty: ["easy", "medium", "hard", "peaceful"],
     "network-compression-threshold": 256,
     "max-tick-time": 60000,
     "require-resource-pack": [false, true],
@@ -43,7 +43,7 @@ const MINECRAFTPROPERTIES = {
     "player-idle-timeout": 0,
     "force-gamemode": [false, true],
     "rate-limit": 0,
-    "hardcore": [false, true],
+    hardcore: [false, true],
     "white-list": [false, true],
     "broadcast-console-to-ops": [true, false],
     "spawn-npcs": [true, false],
@@ -69,20 +69,22 @@ const MINECRAFTPROPERTIES = {
 
 const FILEPREFIX = "data";
 const FILEPATHS = {
-    Database_configs: "data/DB_config.json",
+    Database_configs: "data/DataBaseConfigs.json",
 };
 
 function GetFilePath() {
     return "Files.json";
 }
 
-function GetFilePaths() {
-    if (!fs.existsSync(GetFilePath())) {
-        fs.writeFileSync(GetFilePath(), JSON.stringify(DEFAULTFILEPATHS));
-    }
+async function GetFilePaths() {
+    return await new Promise((resolve, reject) => {
+        if (!fs.existsSync(GetFilePath())) {
+            fs.writeFileSync(GetFilePath(), JSON.stringify(FILEPATHS));
+        }
 
-    const filePaths = GetParsedFile(GetFilePath());
-    return filePaths;
+        const filePaths = GetParsedFile(GetFilePath());
+        resolve(filePaths);
+    });
 }
 
 function GetFilePrefix() {

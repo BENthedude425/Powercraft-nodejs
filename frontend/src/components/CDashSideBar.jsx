@@ -1,6 +1,7 @@
 import { React } from "react";
 import { useNavigate } from "react-router-dom";
 import "../assets/dash-sidebar.css";
+import { Logout } from "../assets/APIactions";
 
 export default function DashBoardSideBar() {
     const navigate = useNavigate();
@@ -58,7 +59,9 @@ export default function DashBoardSideBar() {
                     <img className="icon" src="../settings.png" />{" "}
                     <a className="dashboard-sidebar-bottom">Configurations</a>
                 </div>
-                <div className="dashboard-sidebar-option">
+                <div className="dashboard-sidebar-option" onClick={() =>{
+                    Logout()
+                }}>
                     <img className="icon" src="../logout.png" />
                     <a className="dashboard-sidebar-bottom">Logout</a>
                 </div>
