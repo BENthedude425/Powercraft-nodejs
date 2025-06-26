@@ -82,7 +82,7 @@ export default function PDashboard() {
     }
 
     function GetResources() {
-        fetch(`${APIADDR}api/get-resources`, { credentials: "include" }).then(
+        fetch(`${APIADDR}/api/get-resources`, { credentials: "include" }).then(
             (response) => {
                 response.json().then((responseJSON) => {
                     SetMemoryGraphData([

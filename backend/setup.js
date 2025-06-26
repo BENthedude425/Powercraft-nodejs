@@ -3,6 +3,7 @@ const fs = require("fs");
 const modules = require("./modules");
 const inquirer = require("inquirer");
 const crypto = require("crypto");
+const { FILE } = require("dns");
 
 const FILEPREFIX = modules.GetFilePrefix();
 const FILEIDENT = "setup.js";
@@ -41,6 +42,25 @@ async function Setup() {
         fs.mkdir(FILEPREFIX, (err) => {
             return;
         });
+
+        if (!(await fs.existsSync("images"))) {
+            modules.Log(FILEIDENT, "Creating /images");
+            await fs.mkdirSync("/images", (err) => {
+                modules.Log(
+                    FILEIDENT,
+                    `There was an error creating the images directory. ${err}`
+                );
+            });
+        }
+        if (!(await fs.existsSync("images/servers"))) {
+            modules.Log(FILEIDENT, "Creating /images/servers");
+            await fs.mkdirSync("images/servers", (err) => {
+                modules.Log(
+                    FILEIDENT,
+                    `There was an error creating the images directory. ${err}`
+                );
+            });
+        }
 
         // from modules
         FILEPATHS_FILE = await modules.GetFilePath();

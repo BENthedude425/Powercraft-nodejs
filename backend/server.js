@@ -341,14 +341,14 @@ async function Authenticate(req, res, next) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({ origin: "http://minecraft.powercraft.uk", credentials: true }));
+app.use(cors({ origin: "http://localhost", credentials: true }));
 app.use(express.static("public"));
 app.use(fileUpload());
 app.use(Authenticate);
 
 // Returns path for a servers directory
 function GetServerPath(serverName) {
-    const path = `${process.cwd()}/../servers/${serverName}`;
+    const path = `${process.cwd()}/servers/${serverName}`;
     return path;
 }
 
@@ -414,7 +414,7 @@ function CreateServerDir(serverName) {
 async function CreateServer(serverSettings, properties) {
     // DELETE
     const propertiesString = ConvertPropertiesToString(properties);
-    let sources = await readFileSync("Output.json", { encoding: "utf8" });
+    let sources = await readFileSync("ServerVersions.json", { encoding: "utf8" });
     sources = JSON.parse(sources);
 
     const serverID = serverSettings.ID;

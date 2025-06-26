@@ -25,6 +25,7 @@
 
 # All servers being created on the local machine while testing / developing
 servers
+/backend/servers
 
 notes.txt
 INSPO/*

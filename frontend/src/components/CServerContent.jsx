@@ -34,7 +34,7 @@ export default function ServerContent() {
                 <div className="server_name">Server Name!</div>
                 <img
                     className="server_image_main"
-                    src="http://192.168.0.62:8080/images/pic1.png"
+                    src={`${APIADDR}/images/pic1.png`}
                 />
             </div>
 
