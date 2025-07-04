@@ -6,7 +6,7 @@ import ServerProperties from "../src/components/CServerProperties";
 import "../src/assets/create-server.css";
 import "../src/assets/dashboard.css";
 
-import DEFAULTSERVERIMAGE from "../public/pic1.png";
+import DEFAULTSERVERIMAGE from "../src/images/pic1.png";
 
 const APIADDR = GetAPIAddr();
 

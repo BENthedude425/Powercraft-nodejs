@@ -22,12 +22,6 @@ export default function PDashboard() {
     const [MemoryGraphData, SetMemoryGraphData] = useState([]);
     const [PlayerGraphData, SetPlayerGraphData] = useState([]);
 
-    // Hooks for stat circles
-    const [Disk_Text, SetDiskText] = useState("loading");
-    const [Disk_Style, SetDiskStyle] = useState({});
-    const [Player_Text, SetPlayerText] = useState("loading");
-    const [Player_Style, SetPlayerStyle] = useState({});
-
     // Hooks for graph keys
     const [IntegratedGraphKeys, SetIntegratedGraphKeys] = useState({
         CPU: "blue",
@@ -53,33 +47,19 @@ export default function PDashboard() {
 
     const APIADDR = GetAPIAddr();
 
-    // Init circle variables on load
     useEffect(() => {
         if (!initilised.current) {
             initilised.current = true;
-            InitProgressCircles();
             CalculateGraphWidth(20);
             CalculateGraphHeight(100);
         }
-
         GetResources();
     }, []);
 
-    window.addEventListener("resize", () =>{
+    window.addEventListener("resize", () => {
         CalculateGraphWidth(20);
-        CalculateGraphHeight(100)
+        CalculateGraphHeight(100);
     });
-
-    function InitProgressCircles() {
-        Disk_Circle = document.getElementById("DISK_CIRCLE");
-        Disk_Circle.circumference = 2 * Math.PI * Disk_Circle.r.baseVal.value;
-        Disk_Circle.style.strokeDasharray = `${Disk_Circle.circumference} ${Disk_Circle.circumference}`;
-
-        Player_Circle = document.getElementById("PLAYER_CIRCLE");
-        Player_Circle.circumference =
-            2 * Math.PI * Player_Circle.r.baseVal.value;
-        Player_Circle.style.strokeDasharray = `${Player_Circle.circumference} ${Player_Circle.circumference}`;
-    }
 
     function GetResources() {
         fetch(`${APIADDR}/api/get-resources`, { credentials: "include" }).then(
@@ -100,27 +80,6 @@ export default function PDashboard() {
                     ]);
 
                     SetPlayerGraphData(responseJSON.players);
-
-                    SetDiskStyle(
-                        GetStyle(
-                            Disk_Circle,
-                            (responseJSON.disk.used / responseJSON.disk.total) *
-                                100
-                        )
-                    );
-                    SetDiskText(
-                        `${responseJSON.disk.used}GB / ${responseJSON.disk.total}GB`
-                    );
-
-                    const playerStat =
-                        responseJSON.players[responseJSON.players.length - 1];
-                    SetPlayerStyle(
-                        GetStyle(
-                            Player_Circle,
-                            (playerStat.value / playerStat.total) * 100
-                        )
-                    );
-                    SetPlayerText(`${playerStat.value} / ${playerStat.total}`);
 
                     GetResources();
                 });
@@ -155,17 +114,17 @@ export default function PDashboard() {
         SetGraphWidth(width * (division[1] / 100) - 0.5 * gap);
     }
 
-    function CalculateGraphHeight(percentage){
+    function CalculateGraphHeight(percentage) {
         const graphHolder = document.getElementById("graph-holder");
-    
-        if(graphHolder == null){
+
+        if (graphHolder == null) {
             return;
         }
-        
+
         const height = graphHolder.offsetHeight;
         const multiplier = percentage / 100;
-        console.log(height)
-        SetIntegratedGraphHeight(height * multiplier)
+        console.log(height);
+        SetIntegratedGraphHeight(height * multiplier);
         SetGraphHeight(height * multiplier);
     }
 
@@ -205,26 +164,6 @@ export default function PDashboard() {
                                     graphHeight={GraphHeight}
                                     graphData={PlayerGraphData}
                                 />
-                            </div>
-
-                            <div className="dashboard-monitor-holder">
-                                <div>
-                                    <ProgressCircle
-                                        id="PLAYER_CIRCLE"
-                                        strokeStyle={Player_Style}
-                                        text={Player_Text}
-                                        name="Players"
-                                    />
-                                </div>
-
-                                <div style={{ marginLeft: "500px" }}>
-                                    <ProgressCircle
-                                        id="DISK_CIRCLE"
-                                        strokeStyle={Disk_Style}
-                                        text={Disk_Text}
-                                        name="Disk"
-                                    />
-                                </div>
                             </div>
                         </div>
                     </div>

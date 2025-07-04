@@ -8,7 +8,7 @@ export default function DashBoardSideBar() {
     return (
         <div className="dashboard-sidebar">
             <div className="dashboard-sidebar-top">
-                <img src="../apple.png" />
+                <img src="../src/images/apple.png" />
                 <b>Powercraft</b>
             </div>
 
@@ -18,7 +18,7 @@ export default function DashBoardSideBar() {
                     navigate("servers");
                 }}
             >
-                <img className="icon" src="../servers.png" />
+                <img className="icon" src="../src/images/servers.png" />
                 <a>Servers</a>
             </div>
             <div
@@ -27,7 +27,7 @@ export default function DashBoardSideBar() {
                     navigate("players");
                 }}
             >
-                <img className="icon" src="../players.png" />
+                <img className="icon" src="../src/images/players.png" />
                 <a>Players</a>
             </div>
             <div
@@ -36,7 +36,7 @@ export default function DashBoardSideBar() {
                     navigate("users-and-permissions");
                 }}
             >
-                <img className="icon" src="../permissions.png" />
+                <img className="icon" src="../src/images/permissions.png" />
                 <a>Users and permissions</a>
             </div>
             <div
@@ -45,7 +45,7 @@ export default function DashBoardSideBar() {
                     navigate("programs");
                 }}
             >
-                <img className="icon" src="../coding.png" />
+                <img className="icon" src="../src/images/coding.png" />
                 <a>Programs</a>
             </div>
 
@@ -56,13 +56,13 @@ export default function DashBoardSideBar() {
                         navigate("configurations");
                     }}
                 >
-                    <img className="icon" src="../settings.png" />{" "}
+                    <img className="icon" src="../src/images/settings.png" />{" "}
                     <a className="dashboard-sidebar-bottom">Configurations</a>
                 </div>
                 <div className="dashboard-sidebar-option" onClick={() =>{
                     Logout()
                 }}>
-                    <img className="icon" src="../logout.png" />
+                    <img className="icon" src="../src/images/logout.png" />
                     <a className="dashboard-sidebar-bottom">Logout</a>
                 </div>
             </div>

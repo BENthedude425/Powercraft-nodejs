@@ -1,6 +1,6 @@
 .page {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
     background: linear-gradient(to bottom, #ebedf3, #fafbff);
 
@@ -31,7 +31,7 @@
 .dashboard-header{
     display: flex;
     flex-direction: row;
-    height: 40px;
+    height: 80px;
 
     background-color: var(--PowercraftColorDark);
     box-shadow: 0px 1px 5px 0px;

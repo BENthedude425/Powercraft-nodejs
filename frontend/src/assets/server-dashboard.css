@@ -1,126 +1,176 @@
 body {
-  font-family: "Lucida Console", "Courier New", monospace;
+    font-family: "Lucida Console", "Courier New", monospace;
 }
 
-.flexbox {
-  display: flex;
-  flex-direction: row;
+.server-dash-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2vw;
+    overflow-y: hidden;
+}
 
-  gap: 2vw;
+.server-dash-container-main {
+    display: flex;
+    flex-direction: row;
+    gap: 2.5%;
+    padding: 1%;
 
-  padding: 0.5vw;
+    border-bottom: 2px solid var(--OpaicGrey);
+}
+
+.information-container {
+    display: block;
+    flex: 1;
+    background-color: white;
+}
+
+.flex-container {
+    display: flex;
+}
+
+.flex-container * {
+    flex: 1;
+}
+
+.flex-end {
+    justify-items: end;
+    text-align: end;
 }
 
 .panel {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--OpaicGrey);
+    display: flex;
+    flex-direction: column;
 
-  margin-top: 3%;
-  height: 5%;
-  padding: 0.5%;
-  color: var(--PowercraftColor);
-  font-size: 1vw;
-}
-
-.end {
-  float: right;
+    padding: 0.5%;
+    color: var(--PowercraftColor);
+    font-size: 1vw;
 }
 
 .panel b {
-  font-size: 1.5em;
-  position: relative;
+    font-size: 1.5em;
+    position: relative;
 }
 
 .server_terminal {
-  background-color: black;
-  color: white;
+    background-color: black;
+    color: white;
 
-  width: 50vw;
-  height: 60vh;
+    flex: 2;
+    height: 60vh;
 
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 
-  overflow-y: scroll;
-  overflow-x: wrap;
+    overflow-y: hidden;
+    overflow-x: wrap;
 
-  padding: 0.5%;
+    padding: 0.5%;
 }
 ::-webkit-scrollbar {
-  display: none;
+    display: none;
+}
+
+.server_terminal_content_area {
+    flex: 1;
+    overflow-y: scroll;
+}
+
+.server_terminal_input_area {
+    display: flex;
+    border-top: 1px white solid;
 }
 
 .server_terminal_input {
-  border: none;
-  border-top: 1px white solid;
+    border: none;
 
-  width: 150px;
+    flex-grow: 1;
 
-  background-color: grey;
-  color: white;
+    user-select: none;
 
-  font-size: 15px;
+    background-color: black;
+    color: purple;
+
+    font-size: 15px;
+}
+
+.server_terminal_input:focus {
+    outline-width: 0;
 }
 
 .terminal_text:hover {
-  background-color: yellow;
-  color: purple;
+    background-color: yellow;
+    color: purple;
+}
+
+.footer {
+    position: absolute;
+    width: 100%;
+    height: 2.5%;
+    bottom: 0px;
+
+
+    color: white;
+    background: var(--PowercraftColorDark);
+}
+
+.status_light {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+
+    border-radius: 100%;
 }
 
 .control_panel {
-  margin-top: 2vh;
-  height: 20%;
-
-  background-color: var(--);
+    padding: 5%;
 }
 
 .control_panel button {
-  width: 4vw;
-  height: 2vh;
+    width: 4vw;
+    height: 2vh;
 
-  font-size: 15px;
-  color: white;
+    font-size: 15px;
+    color: white;
 }
 
 .start_button {
-  border: 1px solid rgb(0, 205, 0);
-  background-color: rgb(10, 245, 10);
+    border: 1px solid rgb(0, 205, 0);
+    background-color: rgb(10, 245, 10);
 }
 
 .restart_button {
-  border: 1px solid #c3830c;
-  background-color: #ffa500;
-  width: 2vw;
-  border-radius: 7px;
+    border: 1px solid #c3830c;
+    background-color: #ffa500;
+    width: 2vw;
+    border-radius: 7px;
 }
 
 .stop_button {
-  border: 1px solid #b60202;
-  background-color: #ff0000;
+    border: 1px solid #b60202;
+    background-color: #ff0000;
 
-  width: 2vw;
-  border-radius: 7px;
+    width: 2vw;
+    border-radius: 7px;
 }
 
 button {
-  width: 2vw;
-  border-radius: 7px;
+    width: 2vw;
+    border-radius: 7px;
 }
 
 @media (max-width: 900px) {
-  .flexbox {
-    padding: 2vw;
-    flex-direction: column;
-  }
+    .flexbox {
+        padding: 2vw;
+        flex-direction: column;
+    }
 
-  .server_terminal {
-    width: 99%;
-    font-size: 2vw;
-  }
+    .server_terminal {
+        width: 99%;
+        font-size: 2vw;
+    }
 
-  .panel {
-    width: 97%;
-    font-size: 5vw;
-  }
+    .panel {
+        width: 97%;
+        font-size: 5vw;
+    }
 }

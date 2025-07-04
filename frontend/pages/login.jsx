@@ -34,7 +34,7 @@ export default function Plogin() {
                     </div>
 
                     <img
-                        src="../pictures/apple.png"
+                        src="../src/images/apple.png"
                         className="container-logo"
                     />
                 </div>

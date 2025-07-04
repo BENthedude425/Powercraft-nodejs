@@ -5,7 +5,7 @@ import "../assets/dashboard.css";
 export default function Header() {
   return (
     <div className="dashboard-header">
-      <img src="../apple.png" href="/" onClick={Home} />
+      <img src="../ src/images/apple.png" href="/" onClick={Home} />
       <b>Powercraft</b>
       <div className="options">
         <span

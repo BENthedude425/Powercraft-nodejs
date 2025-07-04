@@ -8,6 +8,7 @@
     border: 2px solid var(--OpaicGrey);
     border-radius: 5px;
 
+    width: 100%;
     height: 100%;
 }
 
@@ -26,7 +27,13 @@
 .player-list-header span{
     flex-grow: 1;
     justify-content: center;
-    font-size: 1em;
+    font-size: 1.5em;
+}
+
+.player-list-header span:last-child{
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 2.5%;
 }
 
 .player-list-scroll{
@@ -46,7 +53,7 @@
 .player-listing span:last-child{
     display: flex;
     justify-content: flex-end;
-    padding-right: 2.55%;
+    padding-right: 2.5%;
 }
 
 .player-listing{

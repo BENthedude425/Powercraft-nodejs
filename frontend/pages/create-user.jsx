@@ -12,7 +12,7 @@ function Pcreate_user() {
                     </div>
 
                     <img
-                        src="../pictures/apple.png"
+                        src="../src/images/apple.png"
                         className="container-logo"
                     />
                 </div>
