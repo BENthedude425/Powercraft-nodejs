@@ -67,7 +67,7 @@ function ServerListHeader() {
 function ServerList() {
     function LongPollServerList(checkSum) {
         // Collect server data to populate the server list
-        fetch(`${APIADDR}/api/get-all-servers/${checkSum}`, {
+        fetch(`${APIADDR}/api/LP-get-all-servers/${checkSum}`, {
             credentials: "include",
         }).then((response) => {
             response.json().then((responseJSON) => {

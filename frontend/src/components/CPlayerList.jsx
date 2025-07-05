@@ -28,21 +28,26 @@ function FormatTimePlayed(seconds) {
     return `D:${days}, h:${hours}, m:${mins}, s:${seconds}`;
 }
 
-function FormatLastPlayed(date){
-    var lastPlayedDate =  new Date(date.split("T")[0]);
-    return ("0" + (lastPlayedDate.getDate())).slice(-2) + "-" +  ("0" + (lastPlayedDate.getMonth() + 1)).slice(-2) + "-" + lastPlayedDate.getFullYear()
-    
+function FormatLastPlayed(date) {
+    var lastPlayedDate = new Date(date.split("T")[0]);
+    return (
+        ("0" + lastPlayedDate.getDate()).slice(-2) +
+        "-" +
+        ("0" + (lastPlayedDate.getMonth() + 1)).slice(-2) +
+        "-" +
+        lastPlayedDate.getFullYear()
+    );
 }
 
 function PlayerListing(props) {
     const data = props.data;
 
-    if(data == null){
-        return(
+    if (data == null) {
+        return (
             <div className="player-listing">
                 <span>No players have played yet</span>
             </div>
-        )
+        );
     }
 
     if (data.last_played == null) {
@@ -64,20 +69,26 @@ function PlayerListing(props) {
 export default function PlayerList(props) {
     const [PLAYERSLIST, SETPLAYERSLIST] = useState([]);
 
-    useEffect(() => {
-        fetch(`${APIADDR}/api/get-player-list`, {
+    function LongPollPlayerList(checkSum) {
+        console.log("long ppoool", checkSum);
+        fetch(`${APIADDR}/api/LP-get-player-list/${checkSum}`, {
             credentials: "include",
         }).then((response) => {
             response.json().then((responseJSON) => {
-                if(responseJSON.length == 0){
-                    SETPLAYERSLIST([null])
-                    return;
+                if (responseJSON[1].length == 0) {
+                    SETPLAYERSLIST([null]);
+                } else {
+                    SETPLAYERSLIST(responseJSON[1]);
                 }
 
-
-                SETPLAYERSLIST(responseJSON);
+                LongPollPlayerList(responseJSON[0]);
             });
         });
+    }
+
+    // Start long polling
+    useEffect(() => {
+        LongPollPlayerList(0);
     }, []);
 
     return (

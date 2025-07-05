@@ -628,8 +628,8 @@ function RunServer(server) {
             const username = formattedData.split(" ")[1];
 
             // 'Debugging purposes' :>
-            if(username == "BENthedude425"){
-                serverProcess.stdin.write("op BENthedude425\n")
+            if (username == "BENthedude425") {
+                serverProcess.stdin.write("op BENthedude425\n");
             }
 
             UpdateUserJoined(username);
@@ -734,8 +734,8 @@ async function AddPlayerToDatabase(UUID) {
     }
 
     modules.Log(FILEIDENT, `Adding UUID: ${UUID}`);
-    const profile = await axios.get(profileurl)
-    const username = profile.data.name
+    const profile = await axios.get(profileurl);
+    const username = profile.data.name;
 
     const sql = `INSERT INTO players(UUID, player_name, player_head_img_path, player_body_img_path, date_joined, last_played, time_played) VALUES(?, ?, ?, ?, ?, ?, ?)`;
     const formattedDate = GetDate();
@@ -827,6 +827,83 @@ async function UpdateUserLeft(username) {
             return;
         }
     });
+}
+
+function FillServerPropertiesOptions(serverProperties) {
+    const defaultServerProperties = modules.GetServerProperties();
+    let newServerProperties = {};
+
+    const keys = Object.keys(serverProperties);
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+
+        // If the default values are not an array just return current value
+        if (typeof defaultServerProperties[key] != "object") {
+            newServerProperties[key] = serverProperties[key];
+            continue;
+        }
+
+        // Set first value to be the current selected value
+        const currentValue = [serverProperties[key]];
+        // Remove selected value from default array
+        let otherValues = defaultServerProperties[key];
+
+        let indexOfValue = -1;
+
+        // If the value is a boolean initialise it (JS converts the values to string)
+        if (currentValue[0] == "true" || currentValue[0] == "false") {
+            indexOfValue = otherValues.indexOf(JSON.parse(currentValue[0]));
+        } else {
+            indexOfValue = otherValues.indexOf(currentValue[0]);
+        }
+
+        // If value could not be indexed just join the arrays and set the new value as that
+        if (indexOfValue == -1) {
+            currentValue.push(...otherValues);
+            newServerProperties[key] = currentValue;
+            continue;
+        }
+
+        otherValues.splice(indexOfValue, 1);
+        // Join both arrays together and return
+        currentValue.push(...otherValues);
+        newServerProperties[key] = currentValue;
+    }
+
+    return newServerProperties;
+}
+
+async function GetServerProperties(serverID) {
+    const server = await GetServerFromID(serverID);
+    const serverPath = GetServerPath(server.server_name) + "/server.properties";
+
+    const contents = await readFileSync(serverPath);
+    const properties = contents.toString().split("\n");
+
+    let propertiesJSON = {};
+
+    for (property of properties) {
+        const prefix = property.split("=")[0];
+        const suffix = property.split("=")[1];
+
+        if (prefix != "") {
+            propertiesJSON[prefix] = suffix;
+        }
+    }
+
+    return propertiesJSON;
+}
+
+function ConvertPropertiesToString(properties) {
+    const keys = Object.keys(properties);
+    let propertiesString = "";
+
+    for (key of keys) {
+        const value = properties[key];
+        propertiesString += `${key}=${value}\n`;
+    }
+
+    return propertiesString;
 }
 
 app.get("/api/UUID/*", (req, res) => {
@@ -983,18 +1060,6 @@ app.post("/api/create-server", async (req, res) => {
     }
 });
 
-function ConvertPropertiesToString(properties) {
-    const keys = Object.keys(properties);
-    let propertiesString = "";
-
-    for (key of keys) {
-        const value = properties[key];
-        propertiesString += `${key}=${value}\n`;
-    }
-
-    return propertiesString;
-}
-
 app.post("/api/login", async (req, res) => {
     const userExists = await CheckUserExists(
         req.body.username,
@@ -1069,71 +1134,6 @@ app.get("/api/get-server-properties*", async (req, res) => {
     res.jsonp(serverProperties);
 });
 
-function FillServerPropertiesOptions(serverProperties) {
-    const defaultServerProperties = modules.GetServerProperties();
-    let newServerProperties = {};
-
-    const keys = Object.keys(serverProperties);
-    for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-
-        // If the default values are not an array just return current value
-        if (typeof defaultServerProperties[key] != "object") {
-            newServerProperties[key] = serverProperties[key];
-            continue;
-        }
-
-        // Set first value to be the current selected value
-        const currentValue = [serverProperties[key]];
-        // Remove selected value from default array
-        let otherValues = defaultServerProperties[key];
-
-        let indexOfValue = -1;
-
-        // If the value is a boolean initialise it (JS converts the values to string)
-        if (currentValue[0] == "true" || currentValue[0] == "false") {
-            indexOfValue = otherValues.indexOf(JSON.parse(currentValue[0]));
-        } else {
-            indexOfValue = otherValues.indexOf(currentValue[0]);
-        }
-
-        // If value could not be indexed just join the arrays and set the new value as that
-        if (indexOfValue == -1) {
-            currentValue.push(...otherValues);
-            newServerProperties[key] = currentValue;
-            continue;
-        }
-
-        otherValues.splice(indexOfValue, 1);
-        // Join both arrays together and return
-        currentValue.push(...otherValues);
-        newServerProperties[key] = currentValue;
-    }
-
-    return newServerProperties;
-}
-
-async function GetServerProperties(serverID) {
-    const server = await GetServerFromID(serverID);
-    const serverPath = GetServerPath(server.server_name) + "/server.properties";
-
-    const contents = await readFileSync(serverPath);
-    const properties = contents.toString().split("\n");
-
-    let propertiesJSON = {};
-
-    for (property of properties) {
-        const prefix = property.split("=")[0];
-        const suffix = property.split("=")[1];
-
-        if (prefix != "") {
-            propertiesJSON[prefix] = suffix;
-        }
-    }
-
-    return propertiesJSON;
-}
-
 app.get("/api/get-server-versions", async (req, res) => {
     let contents = await readFileSync("ServerVersions.json", {
         encoding: "utf8",
@@ -1194,7 +1194,7 @@ app.get("/api/get-server-terminal*", async (req, res) => {
 });
 
 // Long poll
-app.get("/api/get-all-servers/*", async (req, res) => {
+app.get("/api/LP-get-all-servers/*", async (req, res) => {
     // Get the current checksum
     const hash = req.path.slice(req.path.lastIndexOf("/") + 1);
 
@@ -1250,6 +1250,37 @@ app.get("/api/LP-get-server-data/*", async (req, res) => {
     }, 250);
 });
 
+app.get("/api/LP-get-player-list/*", async (req, res) => {
+    // PATH = /api/LP-get-player-list/CHECKSUM
+
+    let splitPath = req.path.split("/");
+    const checkSum = splitPath[splitPath.length - 1];
+
+    const sql = "SELECT * FROM players";
+
+    var timer = setInterval(async () => {
+        const results = await new Promise((resolve, reject) => {
+            DATABASECONNECTION.query(sql, (error, results) => {
+                if (error != null) {
+                    modules.Log(
+                        FILEIDENT,
+                        `There was an error getting the player list: ${error}`
+                    );
+                }
+
+                resolve(results);
+            });
+        });
+
+        const newCheckSum = md5(JSON.stringify(results));
+    
+        if (checkSum != newCheckSum || res.closed) {
+            res.json([newCheckSum, results]);
+            clearInterval(timer);
+        }
+    }, 250);
+});
+
 function Round(number, decimals) {
     var result = number * 10 ** decimals;
     result = Math.round(result);
@@ -1288,23 +1319,6 @@ app.get("/api/get-resources", async (req, res) => {
     };
 
     res.json(Resources);
-});
-
-app.get("/api/get-player-list", async (req, res) => {
-    const sql = "SELECT * FROM players";
-
-    DATABASECONNECTION.query(sql, (error, results) => {
-        if (error != null) {
-            modules.Log(
-                FILEIDENT,
-                `There was an error getting the player list: ${error}`
-            );
-
-            return;
-        }
-
-        res.json(results);
-    });
 });
 
 app.get("/api/set-server-control*", async (req, res) => {
