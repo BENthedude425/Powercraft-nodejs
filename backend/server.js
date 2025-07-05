@@ -1,6 +1,6 @@
 const express = require("express");
 const https = require("follow-redirects").https;
-const puppeteer = require("puppeteer");
+const axios = require("axios");
 const cors = require("cors");
 const mysql2 = require("mysql2");
 const app = express();
@@ -337,11 +337,11 @@ async function Authenticate(req, res, next) {
     next();
 }
 
-const ORIGIN = readFileSync("origin.txt", (err) =>{
-    if(err != null){
-        console.log(err)
+const ORIGIN = readFileSync("origin.txt", (err) => {
+    if (err != null) {
+        console.log(err);
     }
-})
+});
 
 // ---------- APP HANDLERS ---------- \\
 app.use(express.json());
@@ -420,7 +420,9 @@ function CreateServerDir(serverName) {
 async function CreateServer(serverSettings, properties) {
     // DELETE
     const propertiesString = ConvertPropertiesToString(properties);
-    let sources = await readFileSync("ServerVersions.json", { encoding: "utf8" });
+    let sources = await readFileSync("ServerVersions.json", {
+        encoding: "utf8",
+    });
     sources = JSON.parse(sources);
 
     const serverID = serverSettings.ID;
@@ -621,14 +623,14 @@ function RunServer(server) {
         } else if (data.includes("joined the game")) {
             // [14:01:28] [Server thread/INFO]: BENthedude425 joined the game
 
-            // Debugging purposes
-            if(DEVMODE){
-                serverProcess.stdin.write("op BENthedude425\n")
-            }
-
             var formattedData = data.split(":");
             formattedData = formattedData[formattedData.length - 1];
             const username = formattedData.split(" ")[1];
+
+            // 'Debugging purposes' :>
+            if(username == "BENthedude425"){
+                serverProcess.stdin.write("op BENthedude425\n")
+            }
 
             UpdateUserJoined(username);
         } else if (data.includes("left the game")) {
@@ -722,6 +724,9 @@ function CheckServerIsRunning(serverID) {
 }
 
 async function AddPlayerToDatabase(UUID) {
+    const bodyurl = `https://crafthead.net/armor/body/${UUID}`;
+    const headurl = `https://crafthead.net/avatar/${UUID}`;
+    const profileurl = `https://crafthead.net/profile/${UUID}`;
     const playerExists = await PlayerExists(UUID);
 
     if (playerExists) {
@@ -729,31 +734,9 @@ async function AddPlayerToDatabase(UUID) {
     }
 
     modules.Log(FILEIDENT, `Adding UUID: ${UUID}`);
-    const url = `https://mcuuid.net/?q=${UUID}`;
-    const browser = await puppeteer.launch({ headless: true });
+    const profile = await axios.get(profileurl)
+    const username = profile.data.name
 
-    const page = await browser.newPage();
-    await page.goto(url);
-
-    const username = await page.evaluate(() => {
-        let inputs = document.querySelectorAll("input");
-
-        var username;
-
-        for (let i = 0; i < inputs.length; i++) {
-            const input = inputs[i];
-            if (input.id == "results_username") {
-                username = input.value;
-            }
-        }
-
-        return username;
-    });
-
-    browser.close();
-
-    const bodyurl = `https://crafthead.net/armor/body/${UUID}`;
-    const headurl = `https://crafthead.net/avatar/${UUID}`;
     const sql = `INSERT INTO players(UUID, player_name, player_head_img_path, player_body_img_path, date_joined, last_played, time_played) VALUES(?, ?, ?, ?, ?, ?, ?)`;
     const formattedDate = GetDate();
     const dateTime = GetDateTime();
