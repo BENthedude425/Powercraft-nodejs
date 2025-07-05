@@ -28,7 +28,7 @@ servers
 /backend/servers
 /backend/origin.txt
 notes.txt
-INSPO/*
-INSPO
+ignore/*
+ignore
 
 hostswap.js

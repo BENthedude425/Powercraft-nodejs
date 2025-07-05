@@ -620,6 +620,12 @@ function RunServer(server) {
             AddPlayerToDatabase(UUID);
         } else if (data.includes("joined the game")) {
             // [14:01:28] [Server thread/INFO]: BENthedude425 joined the game
+
+            // Debugging purposes
+            if(DEVMODE){
+                serverProcess.stdin.write("op BENthedude425\n")
+            }
+
             var formattedData = data.split(":");
             formattedData = formattedData[formattedData.length - 1];
             const username = formattedData.split(" ")[1];
