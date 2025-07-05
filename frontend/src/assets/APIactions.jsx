@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import Cookies from "universal-cookie";
+
+console.log(`The api address is: ${GetAPIAddr()}`);
 
 function GetAPIAddr() {
     const addr = `${window.location.protocol}//${window.location.hostname}:8080`;
-    console.log(addr)
     return addr;
 }
 
@@ -18,7 +20,4 @@ function Logout() {
     document.location.href = "/login";
 }
 
-export{
-    GetAPIAddr,
-    Logout,
-};
+export { GetAPIAddr, Logout };

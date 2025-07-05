@@ -1,11 +1,12 @@
 import { Logout } from "../assets/APIactions";
 
 import "../assets/dashboard.css";
+import appleIMG from "../../src/images/apple.png";
 
 export default function Header() {
   return (
     <div className="dashboard-header">
-      <img src="../ src/images/apple.png" href="/" onClick={Home} />
+      <img src={appleIMG} href="/" onClick={Home} style={{width: "64px", height: "64px"}}/>
       <b>Powercraft</b>
       <div className="options">
         <span

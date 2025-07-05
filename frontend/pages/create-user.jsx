@@ -2,6 +2,8 @@ import { React } from "react";
 import "../src/assets/main.css";
 import SendForm from "../src/assets/sendForm"
 
+import appleIMG from "../src/images/apple.png"
+
 function Pcreate_user() {
     return (
         <div className="page" style={{ display: "flex" }}>
@@ -12,7 +14,7 @@ function Pcreate_user() {
                     </div>
 
                     <img
-                        src="../src/images/apple.png"
+                        src={appleIMG}
                         className="container-logo"
                     />
                 </div>

@@ -70,6 +70,10 @@ body {
     display: none;
 }
 
+.player-list-container{
+    width: 49%;
+}
+
 .server_terminal_content_area {
     flex: 1;
     overflow-y: scroll;

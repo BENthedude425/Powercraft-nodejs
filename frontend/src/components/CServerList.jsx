@@ -4,6 +4,7 @@ import { GetAPIAddr } from "../assets/APIactions";
 import GetStatusColor from "./CGetStatusColor";
 import { useMediaQuery } from "@mui/material";
 
+import testimg from "../images/apple.png";
 import "../assets/serverlist.css";
 
 function Server(props) {
@@ -13,7 +14,7 @@ function Server(props) {
         <div
             className="server-listing"
             onClick={() => {
-                Redirect(`server-dashboard/${props.serverID}`);
+                Redirect(`server-dashboard#${props.serverID}`);
             }}
         >
             <span>{props.serverName}</span>
@@ -121,7 +122,6 @@ function ServerList() {
             <ServerListButton />
 
             <div className="server-list-scroll">
-                
                 {serverlistings.map((data) => {
                     const serverIMG = `${APIADDR}/images/servers/${data.server_icon_path}`;
                     return (

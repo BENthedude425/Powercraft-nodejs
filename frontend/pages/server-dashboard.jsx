@@ -7,7 +7,7 @@ import GetStatusColor from "../src/components/CGetStatusColor";
 const PlayerList = lazy(() => import("../src/components/CPlayerList"));
 
 const APIADDR = GetAPIAddr();
-let serverID = window.location.href.split("/");
+let serverID = window.location.href.split("#");
 serverID = serverID[serverID.length - 1];
 
 function SendControl(action) {
@@ -73,10 +73,7 @@ function ControlPanel() {
 
             <button
                 onClick={() => {
-                    const splitURL = window.location.href.split("/");
-                    const serverID = splitURL[splitURL.length - 1];
-
-                    window.location = `../server-properties/${serverID}`;
+                    window.location = `../server-properties#${serverID}`;
                 }}
             >
                 Edit server properties
@@ -211,7 +208,7 @@ export default function PServerDashboard() {
                         ></span>
                     </span>
                 </div>
-                <div>
+                <div style={{borderBottom: "3px solid var(--OpaicGrey)", borderRadius: "2px"}}>
                     <span>{props.serverData.server_launcher_type} </span>
                     <span>{props.serverData.server_version} </span>
                     <i>{props.serverData.forge_release}</i>
@@ -270,8 +267,8 @@ export default function PServerDashboard() {
                         </div>
                     </div>
 
-                    <div>
-                        <PlayerList gridArea="PLAYERLIST" />
+                    <div className="player-list-container">
+                        <PlayerList/>
                     </div>
                 </div>
             </div>

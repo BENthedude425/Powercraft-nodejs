@@ -17,9 +17,9 @@ function PlayerListHeader() {
 }
 
 function FormatTimePlayed(seconds) {
-    var mins = seconds / 60;
-    var hours = mins / 60;
-    var days = Math.floor(hours / 24);
+    let mins = seconds / 60;
+    let hours = mins / 60;
+    let days = Math.floor(hours / 24);
 
     hours = Math.floor(hours % 24);
     mins = Math.floor(mins % 60);

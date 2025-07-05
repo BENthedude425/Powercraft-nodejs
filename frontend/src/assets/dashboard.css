@@ -5,7 +5,7 @@
     background: linear-gradient(to bottom, #ebedf3, #fafbff);
 
     font-family: "Lucida Console", "Courier New", monospace;
-    overflow-y: hidden;    
+    overflow-y: hidden;
 }
 
 .main {
@@ -17,7 +17,8 @@
 }
 
 .dashboard-container {
-    display: block;
+    display: flex;
+    flex-direction: column;
 
     width: 100%;
     height: 100%;
@@ -28,7 +29,7 @@
     font-size: 2em;
 }
 
-.dashboard-header{
+.dashboard-header {
     display: flex;
     flex-direction: row;
     height: 80px;
@@ -37,11 +38,11 @@
     box-shadow: 0px 1px 5px 0px;
 }
 
-.dashboard-header img{
+.dashboard-header img {
     width: 32px;
 }
 
-.dashboard-header span{
+.dashboard-header span {
     color: white;
     border-right: 1px solid white;
     border-radius: 2px;
@@ -49,73 +50,71 @@
     padding: 1%;
 }
 
-.dashboard-header b{
+.dashboard-header b {
     color: white;
     text-align: end;
 }
 
-.dashboard-header .options{
+.dashboard-header .options {
     display: flex;
     justify-content: flex-end;
     width: 100%;
-
 }
 
 .dashboard-list-container {
     display: flex;
     flex-direction: column;
 
-    height: 100%;
+    flex: 1;
+    overflow-y: hidden;
 
     box-shadow: 0px 0px 5px 1px;
     background-color: white;
-    
 }
 
-.dashboard-list-container-content{
+.dashboard-list-container-content {
     display: flex;
     flex-direction: row;
+    height: 90%;
 }
 
-.dashboard-list-container-content-div{
+.dashboard-list-container-content-div {
     width: 100%;
     padding: 1%;
 }
 
-.dashboard-resource-container{
+.dashboard-resource-container {
     display: flex;
     flex-direction: column;
 
     gap: 20px;
-    
+
     height: 40%;
     padding: 1vw;
     margin: 20px;
 
     box-shadow: 0px 0px 5px 1px;
-    background-color: white;  
+    background-color: white;
 }
 
-.dashboard-monitor-holder{
-    background-color: red;;
+.dashboard-monitor-holder {
+    background-color: red;
 }
 
-.dashboard-graph-holder{
+.dashboard-graph-holder {
     height: 100%;
     display: flex;
     flex-direction: row;
     gap: 20px;
 }
-.dashboard-graph-key{
+.dashboard-graph-key {
     height: 2vh;
     margin-top: -20px;
-
 
     background: whitesmoke;
     border: 1px solid black;
     border-top: none;
 }
-
 
 .dashboard-resource-grid {
     display: flex;

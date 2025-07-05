@@ -4,6 +4,8 @@ import {useNavigate} from "react-router-dom";
 import {GetAPIAddr} from "../src/assets/APIactions";
 import CheckAuth from "../src/CheckAuth";
 
+import appleIMG from "../src/images/apple.png";
+
 export default function Plogin() {
     const navigate = useNavigate()
     const APIADDR = GetAPIAddr();
@@ -34,7 +36,7 @@ export default function Plogin() {
                     </div>
 
                     <img
-                        src="../src/images/apple.png"
+                        src={appleIMG}
                         className="container-logo"
                     />
                 </div>

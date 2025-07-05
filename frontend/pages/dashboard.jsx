@@ -4,8 +4,6 @@ import { Graph, IntegratedGraph } from "../src/components/CGraphs";
 const Serverlist = lazy(() => import("../src/components/CServerList"));
 const DashBoardSideBar = lazy(() => import("../src/components/CDashSideBar"));
 const PlayerList = lazy(() => import("../src/components/CPlayerList"));
-
-import { ProgressCircle, GetStyle } from "../src/components/CProgressCircle";
 import { GetAPIAddr } from "../src/assets/APIactions";
 
 import "../src/assets/dashboard.css";
@@ -27,9 +25,6 @@ export default function PDashboard() {
         CPU: "blue",
         MEMORY: "red",
     });
-
-    var Disk_Circle;
-    var Player_Circle;
 
     const IntegratedGraphData = {
         CPU: {
@@ -123,7 +118,7 @@ export default function PDashboard() {
 
         const height = graphHolder.offsetHeight;
         const multiplier = percentage / 100;
-        console.log(height);
+
         SetIntegratedGraphHeight(height * multiplier);
         SetGraphHeight(height * multiplier);
     }

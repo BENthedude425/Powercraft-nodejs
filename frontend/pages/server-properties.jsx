@@ -14,7 +14,7 @@ export default function PServerProperties() {
         <div>
             <Header />
             <form
-                action={`${APIADDR}/api/set-server-properties/${serverID}`}
+                action={`${APIADDR}/api/set-server-properties#${serverID}`}
                 method="POST"
                 encType="multipart/form-data"
             >

@@ -33,11 +33,11 @@ export default function App() {
 
                     <Route path="create-server" element={<PCreateServer />} />
                     <Route
-                        path="server-dashboard/*"
+                        path="server-dashboard*"
                         element={<PServerDashboard />}
                     />
                     <Route
-                        path="server-properties/*"
+                        path="server-properties*"
                         element={<PServerProperties />}
                     />
                 </Route>

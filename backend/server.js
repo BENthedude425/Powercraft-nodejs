@@ -337,11 +337,17 @@ async function Authenticate(req, res, next) {
     next();
 }
 
+const ORIGIN = readFileSync("origin.txt", (err) =>{
+    if(err != null){
+        console.log(err)
+    }
+})
+
 // ---------- APP HANDLERS ---------- \\
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors({ origin: "http://localhost", credentials: true }));
+app.use(cors({ origin: ORIGIN, credentials: true }));
 app.use(express.static("public"));
 app.use(fileUpload());
 app.use(Authenticate);
@@ -1372,7 +1378,7 @@ app.post("/api/set-server-properties*", async (req, res) => {
     const serverPropertiesPath =
         GetServerPath(server.server_name) + "/server.properties";
     writeFileSync(serverPropertiesPath, propertiesString);
-    res.redirect(`${req.hostname}/server-dashboard/${serverID}`);
+    res.redirect(`${req.hostname}/server-dashboard#${serverID}`);
 });
 
 app.get("/api/input-server-terminal*", async (req, res) => {
