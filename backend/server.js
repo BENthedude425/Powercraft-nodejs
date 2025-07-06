@@ -356,7 +356,9 @@ app.use(Authenticate);
 
 // Returns path for a servers directory
 function GetServerPath(serverName) {
-    const path = `${process.cwd()}/servers/${serverName}`;
+    // Needed to remove whitespaces and match file formatting
+    let parsedServerName = serverName.split(" ").join("-")
+    const path = `${process.cwd()}/servers/${parsedServerName}`;
     return path;
 }
 
