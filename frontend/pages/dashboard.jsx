@@ -126,9 +126,6 @@ export default function PDashboard() {
     return (
         <div className="page">
             <div className="main">
-                <span className="server-list-button">
-                    <img src="sidebar.png" />
-                </span>
                 <DashBoardSideBar />
                 <div className="dashboard-container">
                     <div className="dashboard-header">

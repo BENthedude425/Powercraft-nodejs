@@ -69,7 +69,7 @@ export default function PCreateServer() {
                 >
                     <input
                         type="text"
-                        name="server_name"
+                        name="serverName"
                         placeholder="server name"
                     />
 

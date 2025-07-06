@@ -70,7 +70,6 @@ export default function PlayerList(props) {
     const [PLAYERSLIST, SETPLAYERSLIST] = useState([]);
 
     function LongPollPlayerList(checkSum) {
-        console.log("long ppoool", checkSum);
         fetch(`${APIADDR}/api/LP-get-player-list/${checkSum}`, {
             credentials: "include",
         }).then((response) => {

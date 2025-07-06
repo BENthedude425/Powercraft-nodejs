@@ -20,6 +20,7 @@ const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
 const md5 = require("md5");
+const { Protocol } = require("puppeteer");
 
 var DATABASECONNECTION;
 var DATABASECONFIGS;
@@ -28,6 +29,7 @@ var FILEPATHS;
 const DEVMODE = true;
 const PORT = 8080;
 const FILEIDENT = "server.js";
+const PROTOCOL = "http";
 
 // An object containing all of the running server processes using serverID's as keys
 const SERVERPROCESSES = {};
@@ -426,7 +428,7 @@ async function CreateServer(serverSettings, properties) {
     sources = JSON.parse(sources);
 
     const serverID = serverSettings.ID;
-    const serverName = serverSettings.server_name;
+    const serverName = serverSettings.serverName.split(" ").join("-");;
     const launcherType = serverSettings.launcherTypeSelect;
     const version = serverSettings.versionSelect;
 
@@ -487,7 +489,7 @@ async function CreateServer(serverSettings, properties) {
         SQLquery,
         [
             serverSettings.ID,
-            serverSettings.server_name,
+            serverSettings.serverName,
             serverSettings.image_path,
             launcherFilePath,
             serverSettings.launcherTypeSelect,
@@ -1022,7 +1024,7 @@ app.post("/api/create-user", async (req, res) => {
 
 app.post("/api/create-server", async (req, res) => {
     const [properties, serverSettings] = FormatServerData(req);
-
+    console.log(serverSettings);
     // Get the next ID (needs improving to work with server deletion)
     serverSettings.ID = await GetUniqueServerID();
 
@@ -1034,10 +1036,23 @@ app.post("/api/create-server", async (req, res) => {
         );
     }
 
-    res.redirect(`${req.hostname}/dashboard`);
+    let launcherFileName;
 
     // Create directory and download files and return path to the executable
-    const launcherFileName = await CreateServer(serverSettings, properties);
+    try {
+        launcherFileName = await CreateServer(serverSettings, properties);
+    } catch (error) {
+        modules.Log(
+            FILEIDENT,
+            `There was an error creating the server: ${error}`
+        );
+        res.send(
+            `There was an error creating the server. View server process to see error.`
+        );
+        return;
+    }
+
+    res.redirect(`${PROTOCOL}://${req.hostname}/dashboard`);
 
     // Install server
     // java -jar filename --installServer
@@ -1069,7 +1084,7 @@ app.post("/api/login", async (req, res) => {
 
     // If user does not exist redirect to the login page
     if (!userExists) {
-        res.redirect(`${req.hostname}/login`);
+        res.redirect(`${PROTOCOL}://${req.hostname}/login`);
         return;
     }
 
@@ -1087,7 +1102,7 @@ app.post("/api/login", async (req, res) => {
         // Once updated set the new token and redirect to the dashboard
         res.setHeader("Access-Control-Allow-Credentials", true);
         res.cookie("auth_token", newToken, { maxAge: 1000 * 60 * 60 * 24 }); // maxAge 1 Day
-        res.redirect(`http://${req.hostname}/dashboard`);
+        res.redirect(`${PROTOCOL}://${req.hostname}/dashboard`);
     });
 });
 
@@ -1273,7 +1288,7 @@ app.get("/api/LP-get-player-list/*", async (req, res) => {
         });
 
         const newCheckSum = md5(JSON.stringify(results));
-    
+
         if (checkSum != newCheckSum || res.closed) {
             res.json([newCheckSum, results]);
             clearInterval(timer);
@@ -1381,7 +1396,7 @@ app.post("/api/set-server-properties*", async (req, res) => {
     const serverPropertiesPath =
         GetServerPath(server.server_name) + "/server.properties";
     writeFileSync(serverPropertiesPath, propertiesString);
-    res.redirect(`${req.hostname}/server-dashboard#${serverID}`);
+    res.redirect(`${PROTOCOL}://${req.hostname}/server-dashboard#${serverID}`);
 });
 
 app.get("/api/input-server-terminal*", async (req, res) => {

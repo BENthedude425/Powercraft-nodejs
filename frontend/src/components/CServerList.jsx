@@ -119,7 +119,7 @@ function ServerList() {
     return (
         <div className="server-list" id="server_list" style={ServerListStyle}>
             <ServerListHeader />
-            <ServerListButton />
+
 
             <div className="server-list-scroll">
                 {serverlistings.map((data) => {
