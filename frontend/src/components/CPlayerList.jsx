@@ -5,6 +5,8 @@ import "../assets/player-list.css";
 
 const APIADDR = GetAPIAddr();
 
+var initialised = false;
+
 function PlayerListHeader() {
     return (
         <div className="player-list-header">
@@ -66,7 +68,35 @@ function PlayerListing(props) {
     );
 }
 
-export default function PlayerList(props) {
+function OnlinePlayerListing(props) {
+    var data = props.playerData;
+
+    if (data == null) {
+        return (
+            <div className="player-listing">
+                <span>There are no players online</span>
+            </div>
+        );
+    }
+
+    if (data.last_played == null) {
+        data.last_played = "Has not played yet..";
+    }
+
+    return (
+        <div className="player-listing">
+            <span>{data.player_name}</span>
+            <span>{FormatLastPlayed(data.last_played)}</span>
+            <span>{FormatTimePlayed(data.time_played)}</span>
+            <span>Playing on: {data.serverName}</span>
+            <span>
+                <img src={data.player_head_img_path} />
+            </span>
+        </div>
+    );
+}
+
+function PlayerList(props) {
     const [PLAYERSLIST, SETPLAYERSLIST] = useState([]);
 
     function LongPollPlayerList(checkSum) {
@@ -102,3 +132,51 @@ export default function PlayerList(props) {
         </div>
     );
 }
+
+function OnlinePlayerList(props) {
+    const [ONLINEPLAYERSLIST, SETONLINEPLAYERSLIST] = useState([]);
+
+    function LongPollOnlinePlayerList(checkSum) {
+        fetch(`${APIADDR}/api/LP-get-online-player-list/null/${checkSum}`, {
+            credentials: "include",
+        }).then((response) => {
+            response.json().then((responseJSON) => {
+                if (responseJSON[1].length == 0) {
+                    SETONLINEPLAYERSLIST([null]);
+                } else {
+                    SETONLINEPLAYERSLIST(responseJSON[1]);
+                }
+
+                LongPollOnlinePlayerList(responseJSON[0]);
+            });
+        });
+    }
+
+    // Start long polling
+    useEffect(() => {
+        if (!initialised) {
+            LongPollOnlinePlayerList("online-player-list");
+            initialised = true;
+        }
+    }, []);
+
+    return (
+        <div className="player-list" style={{ gridArea: `${props.gridArea}` }}>
+            <PlayerListHeader />
+
+            <div className="player-list-scroll">
+                {Object.keys(ONLINEPLAYERSLIST).map((key) => {
+                    var players = ONLINEPLAYERSLIST[key];
+
+                    return players.map((player) => {
+                        player.serverName = key;
+
+                        return <OnlinePlayerListing playerData={player} />;
+                    });
+                })}
+            </div>
+        </div>
+    );
+}
+
+export { PlayerList, OnlinePlayerList };

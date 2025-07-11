@@ -3,7 +3,7 @@ import { Graph, IntegratedGraph } from "../src/components/CGraphs";
 
 const Serverlist = lazy(() => import("../src/components/CServerList"));
 const DashBoardSideBar = lazy(() => import("../src/components/CDashSideBar"));
-const PlayerList = lazy(() => import("../src/components/CPlayerList"));
+import {OnlinePlayerList} from "../src/components/CPlayerList"
 import { GetAPIAddr } from "../src/assets/APIactions";
 
 import "../src/assets/dashboard.css";
@@ -42,13 +42,17 @@ export default function PDashboard() {
 
     const APIADDR = GetAPIAddr();
 
+
+    // Using initilised value prevents more than 1 request being sent at a time
     useEffect(() => {
         if (!initilised.current) {
             initilised.current = true;
             CalculateGraphWidth(20);
             CalculateGraphHeight(100);
-        }
         GetResources();
+
+        }
+        
     }, []);
 
     window.addEventListener("resize", () => {
@@ -167,8 +171,8 @@ export default function PDashboard() {
                                 <Serverlist />
                             </div>
                             <div className="dashboard-list-container-content-div">
-                                <h1 className="dashboard-heading">Players</h1>
-                                <PlayerList gridArea="PLAYERLIST" />
+                                <h1 className="dashboard-heading">Online Players</h1>
+                                <OnlinePlayerList />
                             </div>
                         </div>
                     </div>

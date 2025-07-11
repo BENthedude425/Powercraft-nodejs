@@ -21,8 +21,9 @@ const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
 const md5 = require("md5");
 const { Protocol } = require("puppeteer");
+const { console } = require("inspector");
 
-var DATABASECONNECTION;
+var DATABASECONNECTION = null;
 var DATABASECONFIGS;
 var FILEPATHS;
 
@@ -35,7 +36,8 @@ const PROTOCOL = "http";
 const SERVERPROCESSES = {};
 
 // Keeps track of each servers player count using serverID's as keys
-const PLAYERCOUNTS = [];
+var PLAYERCOUNTS = [];
+var PLAYERLISTS = {};
 var PLAYERDATA = [];
 
 function GetExecutablePath(server) {
@@ -313,6 +315,14 @@ async function SetAllServersStopped() {
 
 // Check if user has auth and give access accordingly
 async function Authenticate(req, res, next) {
+    // Check that the database connection has been establised
+
+    if (DATABASECONNECTION == null) {
+        res.send(
+            "The database connection has not been yet established!\nPlease wait a few seconds and try again. If this error persists contact an admin."
+        );
+    }
+
     // Get token and check if the user has auth
     const token = GetCookie(req, "auth_token");
     const auth = await JWTCheck(token);
@@ -356,10 +366,8 @@ app.use(Authenticate);
 
 // Returns path for a servers directory
 function GetServerPath(serverName) {
-    // Needed to remove whitespaces and match file formatting
-    let parsedServerName = serverName.split(" ").join("-")
-    const path = `${process.cwd()}/servers/${parsedServerName}`;
-    return path;
+    let parsedServerName = ParseServerName(serverName);
+    return `${process.cwd()}/servers/${parsedServerName}`;
 }
 
 function GetServerFromID(serverID) {
@@ -407,6 +415,16 @@ function ChangeServerStatus(serverID, newStatus) {
     });
 }
 
+function ChangePlayerStatus(serverID, newStatus) {
+    const SQLquery = "UPDATE servers SET server_status = ? WHERE ID = ?";
+
+    DATABASECONNECTION.query(SQLquery, [newStatus, serverID], (error) => {
+        if (error != null) {
+            modules.Log(FILEIDENT, error);
+        }
+    });
+}
+
 function CreateServerDir(serverName) {
     const serversDir = GetServerPath("");
     const serverPath = GetServerPath(serverName);
@@ -415,22 +433,26 @@ function CreateServerDir(serverName) {
         fs.mkdirSync(serversDir);
     }
 
+    if (fs.existsSync(serverPath)) {
+        modules.Log(
+            FILEIDENT,
+            `A directory for server name :${serverName} already exists!`
+        );
+        return;
+    }
+
     fs.mkdirSync(serverPath);
     modules.Log(FILEIDENT, "Servers directory created.");
-    CreateServerDir;
     return true;
 }
 
 async function CreateServer(serverSettings, properties) {
-    // DELETE
     const propertiesString = ConvertPropertiesToString(properties);
     let sources = await readFileSync("ServerVersions.json", {
         encoding: "utf8",
     });
     sources = JSON.parse(sources);
 
-    const serverID = serverSettings.ID;
-    const serverName = serverSettings.serverName.split(" ").join("-");;
     const launcherType = serverSettings.launcherTypeSelect;
     const version = serverSettings.versionSelect;
 
@@ -464,14 +486,14 @@ async function CreateServer(serverSettings, properties) {
     }
 
     // Get all paths for files
-    const path = GetServerPath(serverName);
+    const path = GetServerPath(serverSettings.serverName);
     const propertiesPath = `${path}/server.properties`;
     const terminalPath = `${path}/terminal.txt`;
     const eulaPath = `${path}/eula.txt`;
     const launcherFilePath = `${path}/${launcherFileName}`;
 
     // Create the server directory\
-    CreateServerDir(serverName);
+    CreateServerDir(serverSettings.serverName);
 
     // Create the properties file
     await fs.writeFileSync(propertiesPath, propertiesString);
@@ -510,7 +532,7 @@ async function CreateServer(serverSettings, properties) {
     await modules.DownloadAndSaveFile(link, launcherFilePath);
 
     // Update server status to installing
-    ChangeServerStatus(serverID, "Installing");
+    ChangeServerStatus(serverSettings.ID, "Installing");
     return launcherFileName;
 }
 
@@ -586,30 +608,46 @@ function ReturnRunCommand(server) {
     }
 }
 
+function ParseServerName(serverName) {
+    return serverName.split(" ").join("-");
+}
+
+function RemoveEscapeChars(str) {
+    return str.replace(/(\r\n|\n|\r)/gm, " ").trim();
+}
+
 // Takes a server object and runs it
 function RunServer(server) {
-    const serverID = server.ID;
     const serverPath = GetServerPath(server.server_name);
 
-    ChangeServerStatus(serverID, "Running");
+    ChangeServerStatus(server.ID, "Running");
 
     const command = ReturnRunCommand(server);
     var serverProcess = exec(command);
-    PLAYERCOUNTS[serverID] = {
+    PLAYERCOUNTS[server.ID] = {
         value: 0,
         total: 0,
     };
 
     serverProcess.stdout.on("data", (data) => {
+        // [13:25:26 INFO]: There are 1 of a max of 20 players online: BENthedude425, Player2, Player3
         if (data.includes("players online:")) {
             var formattedData = data.split(":");
-            formattedData = formattedData[formattedData.length - 2];
-            formattedData = formattedData.split(" ");
 
-            PLAYERCOUNTS[serverID] = {
-                value: parseInt(formattedData[3]),
-                total: parseInt(formattedData[8]),
+            let playerCount =
+                formattedData[formattedData.length - 2].split(" ");
+            let playerList = RemoveEscapeChars(
+                formattedData[formattedData.length - 1]
+            )
+                .split(" ")
+                .join("")
+                .split(",");
+
+            PLAYERCOUNTS[server.ID] = {
+                value: parseInt(playerCount[3]),
+                total: parseInt(playerCount[8]),
             };
+            PLAYERLISTS[server.ID] = playerList;
         } else {
             fs.appendFileSync(`${serverPath}/terminal.txt`, data);
         }
@@ -621,7 +659,7 @@ function RunServer(server) {
             formattedData = formattedData.split(" ");
 
             var UUID = formattedData[formattedData.length - 1];
-            UUID = UUID.replace(/(\r\n|\n|\r)/gm, " ").trim();
+            UUID = RemoveEscapeChars(UUID);
 
             AddPlayerToDatabase(UUID);
         } else if (data.includes("joined the game")) {
@@ -652,16 +690,16 @@ function RunServer(server) {
     });
 
     serverProcess.on("exit", (code) => {
-        ChangeServerStatus(serverID, "Stopped");
+        ChangeServerStatus(server.ID, "Stopped");
         fs.appendFileSync(
             `${serverPath}/terminal.txt`,
             `The server has closed with code: ${code}\n`
         );
         // Remove the process from the object
-        SERVERPROCESSES[serverID] = null;
+        SERVERPROCESSES[server.ID] = null;
     });
 
-    SERVERPROCESSES[serverID] = serverProcess;
+    SERVERPROCESSES[server.ID] = serverProcess;
 }
 
 // Updates the server player count
@@ -910,6 +948,10 @@ function ConvertPropertiesToString(properties) {
     return propertiesString;
 }
 
+app.get("/test", (req, res) => {
+    res.json([PLAYERLISTS]);
+});
+
 app.get("/api/UUID/*", (req, res) => {
     let path = req.path.split("/");
     const UUID = path[path.length - 1];
@@ -1061,7 +1103,7 @@ app.post("/api/create-server", async (req, res) => {
     modules.Log(`${FILEIDENT}-SERVERINSTALL`, "Installing server");
 
     // Set any installation instructions (if any needed)
-    const serverPath = GetServerPath(serverSettings.server_name);
+    const serverPath = GetServerPath(serverSettings.serverName);
     const command = ReturnInstallCommand(
         serverSettings.launcherTypeSelect,
         serverPath,
@@ -1211,7 +1253,7 @@ app.get("/api/get-server-terminal*", async (req, res) => {
 });
 
 // Long poll
-app.get("/api/LP-get-all-servers/*", async (req, res) => {
+app.get("/api/LP-get-all-servers*", async (req, res) => {
     // Get the current checksum
     const hash = req.path.slice(req.path.lastIndexOf("/") + 1);
 
@@ -1239,7 +1281,7 @@ app.get("/api/LP-get-all-servers/*", async (req, res) => {
 });
 
 // Long poll
-app.get("/api/LP-get-server-data/*", async (req, res) => {
+app.get("/api/LP-get-server-data*", async (req, res) => {
     // PATH = /api/LP-get-server-data/SERVERID/CHECKSUM
 
     let splitPath = req.path.split("/");
@@ -1267,8 +1309,9 @@ app.get("/api/LP-get-server-data/*", async (req, res) => {
     }, 250);
 });
 
-app.get("/api/LP-get-player-list/*", async (req, res) => {
+app.get("/api/LP-get-player-list*", async (req, res) => {
     // PATH = /api/LP-get-player-list/CHECKSUM
+    console.log("sdomething is wrong");
 
     let splitPath = req.path.split("/");
     const checkSum = splitPath[splitPath.length - 1];
@@ -1297,6 +1340,91 @@ app.get("/api/LP-get-player-list/*", async (req, res) => {
         }
     }, 250);
 });
+
+app.get(
+    "/api/LP-get-online-player-list/:serverID/:checksum",
+    async (req, res) => {
+        // PATH = /api/LP-get-online-player-list/serverID/CHECKSUM
+        const serverID = req.params.serverID;
+
+        const sql = "SELECT * FROM players WHERE player_name in (?)";
+
+        var timer = setInterval(async () => {
+            const Results = await new Promise(async (resolve, reject) => {
+                var compiledResults = {};
+
+                if (PLAYERLISTS.length == 0) {
+                    return;
+                }
+
+                // Check for server ID filter
+                //
+                // No filter
+                if (serverID == "null") {
+                    // ServerID's
+                    const PLAYERLISTSkeys = Object.keys(PLAYERLISTS);
+                    PLAYERLISTSkeys.forEach(async (key) => {
+                        // Place the found users into a key of the server name
+                        let server = await GetServerFromID(key);
+
+                        const users = await new Promise((resolve, reject) => {
+                            DATABASECONNECTION.query(
+                                sql,
+                                [PLAYERLISTS[key]],
+                                async (error, results) => {
+                                    if (error != null) {
+                                        reject(error);
+                                    }
+
+                                    // Results showing any given server ID exlusively
+                                    resolve(results);
+                                }
+                            );
+                        });
+
+                        compiledResults[server.server_name] = users;
+
+                        resolve(compiledResults);
+                    });
+                    // With filter
+                } else {
+                    const users = await new Promise((resolve, reject) => {
+                        DATABASECONNECTION.query(
+                            sql,
+                            [PLAYERLISTS[serverID]],
+                            async (error, results) => {
+                                if (error != null) {
+                                    modules.Log(
+                                        FILEIDENT,
+                                        `There was an error getting the online player list: ${error}`
+                                    );
+                                }
+
+                                resolve(results);
+                            }
+                        );
+                    });
+
+                    let serverName = GetServerFromID(serverID).server_name;
+                    compiledResults[serverName] = users;
+                    resolve(compiledResults);
+                }
+            });
+
+            const newCheckSum = md5(JSON.stringify(Results));
+
+            if (res.closed) {
+                clearInterval(timer);
+                return;
+            }
+
+            if ((req.params.checksum != newCheckSum) & !res.closed) {
+                res.json([newCheckSum, Results]);
+                clearInterval(timer);
+            }
+        }, 250);
+    }
+);
 
 function Round(number, decimals) {
     var result = number * 10 ** decimals;
@@ -1427,6 +1555,7 @@ app.get("/api/input-server-terminal*", async (req, res) => {
 });
 
 // THIS IS ONLY HERE FOR DEBUGGING PURPOSES AND WILL NOT BE INCLUDED ON RELEASES
+
 if (DEVMODE) {
     app.get("/db/*", async (req, res) => {
         const splitPath = req.path.split("/");
@@ -1446,7 +1575,7 @@ if (DEVMODE) {
     });
 
     app.get("/api/REMOVESERVERS", (req, res) => {
-        modules.Log("WARNING", "REMOVING ALL SERVERS");
+        modules.Log("INFO", "REMOVING ALL SERVERS");
         DATABASECONNECTION.query("DELETE FROM servers", (error) => {
             if (error != null) {
                 res.send(error);
@@ -1459,6 +1588,15 @@ if (DEVMODE) {
             }
         });
         res.send("");
+    });
+
+    app.get("/api/REMOVEPLAYERS", (req, res) => {
+        modules.Log("INFO", "REMOVING ALL PLAYERS");
+        DATABASECONNECTION.query("DELETE FROM players", (error) => {
+            if (error != null) {
+                res.send(error);
+            }
+        });
     });
 }
 

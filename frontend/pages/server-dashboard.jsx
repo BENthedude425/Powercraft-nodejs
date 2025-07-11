@@ -4,7 +4,7 @@ import "../src/assets/server-dashboard.css";
 import Header from "../src/components/CHeader";
 import { GetAPIAddr } from "../src/assets/APIactions";
 import GetStatusColor from "../src/components/CGetStatusColor";
-const PlayerList = lazy(() => import("../src/components/CPlayerList"));
+import {PlayerList} from "../src/components/CPlayerList"
 
 const APIADDR = GetAPIAddr();
 let serverID = window.location.href.split("#");
