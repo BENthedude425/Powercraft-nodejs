@@ -306,10 +306,35 @@ async function SetAllServersStopped() {
                         }
                     );
                 }
-
-                resolve();
             }
         );
+
+        DATABASECONNECTION.query(
+            `SELECT * FROM servers WHERE server_status = 'Installing'`,
+            (error, results, _) => {
+                if (error != null) {
+                    modules.Log(FILEIDENT, error);
+                }
+
+                for (result of results) {
+                    DATABASECONNECTION.query(
+                        `UPDATE servers SET server_status = 'Install_failed' WHERE ID = ${result.ID}`,
+                        (error) => {
+                            if (error != null) {
+                                modules.Log(FILEIDENT, error);
+                            } else {
+                                modules.Log(
+                                    FILEIDENT,
+                                    `Stopped server install: "${result.server_name}". This server did not finish installing and may have suffered data corruption or loss.`
+                                );
+                            }
+                        }
+                    );
+                }
+            }
+        );
+
+        resolve();
     });
 }
 
@@ -1149,6 +1174,9 @@ app.post("/api/login", async (req, res) => {
         // Once updated set the new token and redirect to the dashboard
         res.setHeader("Access-Control-Allow-Credentials", true);
         res.cookie("auth_token", newToken, { maxAge: 1000 * 60 * 60 * 24 }); // maxAge 1 Day
+        res.cookie("username", req.body.username, {
+            maxAge: 1000 * 60 * 60 * 24,
+        });
         res.redirect(`${PROTOCOL}://${req.hostname}/dashboard`);
     });
 });

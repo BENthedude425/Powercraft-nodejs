@@ -1,12 +1,17 @@
 import { React, useState, useRef, useEffect, lazy } from "react";
 import { Graph, IntegratedGraph } from "../src/components/CGraphs";
 
+import Cookies from "universal-cookie";
+
+
 const Serverlist = lazy(() => import("../src/components/CServerList"));
 const DashBoardSideBar = lazy(() => import("../src/components/CDashSideBar"));
 import {OnlinePlayerList} from "../src/components/CPlayerList"
 import { GetAPIAddr } from "../src/assets/APIactions";
 
 import "../src/assets/dashboard.css";
+
+const cookies = new Cookies();
 
 export default function PDashboard() {
     const [GraphWidth, SetGraphWidth] = useState(300);
@@ -133,7 +138,7 @@ export default function PDashboard() {
                 <DashBoardSideBar />
                 <div className="dashboard-container">
                     <div className="dashboard-header">
-                        <b></b>
+                        <b>Logged in as: {cookies.get("username")}</b>
                     </div>
                     <div className="dashboard-resource-container">
                         <div className="dashboard-heading">RESOURCES</div>
