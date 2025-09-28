@@ -695,8 +695,11 @@ function RunServer(server) {
             `${serverPath}/terminal.txt`,
             `The server has closed with code: ${code}\n`
         );
+
         // Remove the process from the object
-        SERVERPROCESSES[server.ID] = null;
+        delete SERVERPROCESSES[server.ID];
+        // Remove the player list data for the server
+        delete PLAYERLISTS[server.ID];
     });
 
     SERVERPROCESSES[server.ID] = serverProcess;

@@ -5,6 +5,7 @@ import { Logout } from "../assets/APIactions";
 
 import appleIMG from        "../../src/images/apple.png";
 import serversIMG from      "../../src/images/servers.png";
+import createServerIMG from "../../src/images/create-server.png";
 import playersIMG from      "../../src/images/players.png";
 import permissionsIMG from  "../../src/images/permissions.png";
 import codingIMG from       "../../src/images/coding.png";
@@ -23,7 +24,7 @@ export default function DashBoardSideBar() {
             <div
                 className="dashboard-sidebar-option"
                 onClick={() => {
-                    navigate("servers");
+                    navigate("../servers");
                 }}
             >
                 <img className="icon" src={serversIMG} />
@@ -32,7 +33,16 @@ export default function DashBoardSideBar() {
             <div
                 className="dashboard-sidebar-option"
                 onClick={() => {
-                    navigate("players");
+                    navigate("../create-server");
+                }}
+            >
+                <img className="icon" src={createServerIMG} />
+                <a>Create a server</a>
+            </div>
+            <div
+                className="dashboard-sidebar-option"
+                onClick={() => {
+                    navigate("../players");
                 }}
             >
                 <img className="icon" src={playersIMG} />
@@ -41,7 +51,7 @@ export default function DashBoardSideBar() {
             <div
                 className="dashboard-sidebar-option"
                 onClick={() => {
-                    navigate("users-and-permissions");
+                    navigate("../users-and-permissions");
                 }}
             >
                 <img className="icon" src={permissionsIMG} />
@@ -50,7 +60,7 @@ export default function DashBoardSideBar() {
             <div
                 className="dashboard-sidebar-option"
                 onClick={() => {
-                    navigate("programs");
+                    navigate("../programs");
                 }}
             >
                 <img className="icon" src={codingIMG} />
@@ -61,7 +71,7 @@ export default function DashBoardSideBar() {
                 <div
                     className="dashboard-sidebar-option"
                     onClick={() => {
-                        navigate("configurations");
+                        navigate("../configurations");
                     }}
                 >
                     <img className="icon" src={settingsIMG} />{" "}
