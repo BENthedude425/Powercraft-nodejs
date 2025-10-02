@@ -3,6 +3,7 @@ import Cookies from "universal-cookie";
 
 console.log(`The api address is: ${GetAPIAddr()}`);
 
+// Formats a string of the location of the api endpoint
 function GetAPIAddr() {
     const addr = `${window.location.protocol}//${window.location.hostname}:8080`;
     return addr;
@@ -14,9 +15,13 @@ function Logout() {
     if (!window.confirm("Are you sure you want to log out ?")) {
         return;
     }
+
     const cookies = new Cookies();
 
+    // Remove cookies
     cookies.set("auth_token", null);
+    cookies.set("username", null);
+
     document.location.href = "/login";
 }
 

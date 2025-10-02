@@ -8,26 +8,12 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
+  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
+  "main": "./vite.config.js",
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "@emotion/styled": "^11.14.0",
-    "@mui/material": "^7.1.0",
-    "@mui/styled-engine": "^7.1.0",
-    "Math": "^0.0.1-security",
-    "mui": "^0.0.1",
-    "mysql2": "^3.10.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.23.1",
-    "universal-cookie": "^7.1.4"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.66",
-    "@types/react-dom": "^18.2.22",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react": "^7.34.1",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.6",
-    "vite": "^6.3.5"
+    "@vitejs/plugin-react": "^5.0.4",
+    "universal-cookie": "^8.0.1"
   }
 }

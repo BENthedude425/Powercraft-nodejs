@@ -8,6 +8,5 @@ export default defineConfig({
         host: true,
         allowedHosts: true,
         port: 80,
-    },
-    base: "./"
+    }
 });

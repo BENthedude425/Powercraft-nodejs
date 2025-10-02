@@ -799,12 +799,16 @@ async function AddPlayerToDatabase(UUID) {
     const profileurl = `https://crafthead.net/profile/${UUID}`;
     const playerExists = await PlayerExists(UUID);
 
+    const httpsAgent = new https.Agent({
+        rejectUnauthorized: false, // (NOTE: this will disable client verification)
+    });
+
     if (playerExists) {
         return;
     }
 
     modules.Log(FILEIDENT, `Adding UUID: ${UUID}`);
-    const profile = await axios.get(profileurl);
+    const profile = await axios.get(profileurl, {httpsAgent});
     const username = profile.data.name;
 
     const sql = `INSERT INTO players(UUID, player_name, player_head_img_path, player_body_img_path, date_joined, last_played, time_played) VALUES(?, ?, ?, ?, ?, ?, ?)`;
