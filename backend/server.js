@@ -260,6 +260,7 @@ async function INIT() {
     DATABASECONNECTION = await InitialiseDB();
 
     await SetAllServersStopped();
+    await SetAllPlayersStopped();
 
     setInterval(() => {
         GetAllPlayers();
@@ -281,6 +282,30 @@ async function INIT() {
 
 // Initialise systems
 INIT();
+
+async function SetAllPlayersStopped() {
+    return await new Promise((resolve, reject) => {
+        DATABASECONNECTION.query(
+            "UPDATE players SET status = 'offline' WHERE status = 'playing'",
+            (error, results, _) => {
+                if (error != null) {
+                    modules.Log(FILEIDENT, error);
+                }
+                modules.Log("test", results);
+
+                for (var key in results) {
+                    const playerData = results[key];
+                    modules.Log(
+                        FILEIDENT,
+                        `Player: ${playerData.username} was still playing when server crashed. Some statistics may be innacurate or incorrect.`
+                    );
+                }
+
+                resolve();
+            }
+        );
+    });
+}
 
 async function SetAllServersStopped() {
     return await new Promise((resolve, reject) => {
@@ -808,16 +833,25 @@ async function AddPlayerToDatabase(UUID) {
     }
 
     modules.Log(FILEIDENT, `Adding UUID: ${UUID}`);
-    const profile = await axios.get(profileurl, {httpsAgent});
+    const profile = await axios.get(profileurl, { httpsAgent });
     const username = profile.data.name;
 
-    const sql = `INSERT INTO players(UUID, player_name, player_head_img_path, player_body_img_path, date_joined, last_played, time_played) VALUES(?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO players(UUID, player_name, player_head_img_path, player_body_img_path, date_joined, last_played, time_played, status) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`;
     const formattedDate = GetDate();
     const dateTime = GetDateTime();
 
     DATABASECONNECTION.query(
         sql,
-        [UUID, username, headurl, bodyurl, formattedDate, dateTime, 0],
+        [
+            UUID,
+            username,
+            headurl,
+            bodyurl,
+            formattedDate,
+            dateTime,
+            0,
+            "playing",
+        ],
         (error) => {
             if (error != null) {
                 modules.Log(
@@ -857,15 +891,20 @@ function GetDateTime() {
 
 // Updates the database when a player has joined a server
 function UpdateUserJoined(username) {
-    const sqlQuery = "UPDATE players SET last_played = ? WHERE player_name = ?";
+    const sqlQuery =
+        "UPDATE players SET last_played = ?, status = ? WHERE player_name = ?";
     const dateTime = GetDateTime();
 
-    DATABASECONNECTION.query(sqlQuery, [dateTime, username], (error) => {
-        if (error != null) {
-            console.log(error);
-            return;
+    DATABASECONNECTION.query(
+        sqlQuery,
+        [dateTime, "playing", username],
+        (error) => {
+            if (error != null) {
+                console.log(error);
+                return;
+            }
         }
-    });
+    );
 }
 
 // Updates the database when a player has left a server
@@ -893,14 +932,19 @@ async function UpdateUserLeft(username) {
     const timePlayed =
         Math.round((timeDifference + parseInt(result.time_played)) * 100) / 100;
 
-    const sqlQuery = "UPDATE players SET time_played = ? WHERE player_name = ?";
+    const sqlQuery =
+        "UPDATE players SET time_played = ?, status = ? WHERE player_name = ?";
     // Update the total time played on the database
-    DATABASECONNECTION.query(sqlQuery, [timePlayed, username], (error) => {
-        if (error != null) {
-            console.log(error);
-            return;
+    DATABASECONNECTION.query(
+        sqlQuery,
+        [timePlayed, "offline", username],
+        (error) => {
+            if (error != null) {
+                console.log(error);
+                return;
+            }
         }
-    });
+    );
 }
 
 function FillServerPropertiesOptions(serverProperties) {

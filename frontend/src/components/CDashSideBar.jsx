@@ -1,5 +1,4 @@
-import { React } from "react";
-import { useNavigate } from "react-router-dom";
+import {useNavigate } from "react-router-dom";
 import "../assets/dash-sidebar.css";
 import { Logout } from "../assets/APIactions";
 
@@ -17,7 +16,7 @@ export default function DashBoardSideBar() {
     return (
         <div className="dashboard-sidebar">
             <div className="dashboard-sidebar-top">
-                <img src={appleIMG} />
+                <img src={appleIMG} onClick={() => document.location.href = "/dashboard"} />
                 <b>Powercraft</b>
             </div>
 

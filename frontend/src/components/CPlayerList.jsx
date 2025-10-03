@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { GetAPIAddr } from "../assets/APIactions";
 import "../assets/player-list.css";
+import { useFetcher } from "react-router-dom";
+import { Update } from "@mui/icons-material";
 
 const APIADDR = GetAPIAddr();
 
@@ -53,7 +55,7 @@ function PlayerListing(props) {
     }
 
     if (data.last_played == null) {
-        data.last_played = "Has not played yet..";
+        // data.last_played = "Has not played yet..";
     }
 
     return (
@@ -61,6 +63,7 @@ function PlayerListing(props) {
             <span>{data.player_name}</span>
             <span>{FormatLastPlayed(data.last_played)}</span>
             <span>{FormatTimePlayed(data.time_played)}</span>
+            <span>{data.status}</span>
             <span>
                 <img src={data.player_head_img_path} />
             </span>
@@ -80,7 +83,7 @@ function OnlinePlayerListing(props) {
     }
 
     if (data.last_played == null) {
-        data.last_played = "Has not played yet..";
+        //data.last_played = "Has not played yet..";
     }
 
     return (
@@ -98,27 +101,80 @@ function OnlinePlayerListing(props) {
 
 function PlayerList(props) {
     const [PLAYERSLIST, SETPLAYERSLIST] = useState([]);
+    const [pollchecksum, setchecksum] = useState(0);
+    const PollReady = useRef(true);
+    const TimerReady = useRef(true);
 
-    function LongPollPlayerList(checkSum) {
-        fetch(`${APIADDR}/api/LP-get-player-list/${checkSum}`, {
-            credentials: "include",
-        }).then((response) => {
-            response.json().then((responseJSON) => {
-                if (responseJSON[1].length == 0) {
-                    SETPLAYERSLIST([null]);
-                } else {
-                    SETPLAYERSLIST(responseJSON[1]);
-                }
+    const init = useRef(false);
 
-                LongPollPlayerList(responseJSON[0]);
+    function UpdatePlayerListStats() {
+        var UpdatedPlayerslist = [];
+        for (var key in PLAYERSLIST) {
+            var playerData = PLAYERSLIST[key];
+
+            if (playerData.status == "playing") {
+                playerData.time_played = parseFloat(playerData.time_played) + 1;
+            }
+
+            UpdatedPlayerslist.push(playerData);
+        }
+        SETPLAYERSLIST(UpdatedPlayerslist);
+
+        //setTimeout(() => {
+        //    UpdatePlayerListStats();
+        //}, 1000);
+    }
+
+    // Update seconds
+    useEffect(() => {
+        LongPollPlayerList();
+    }, [PLAYERSLIST]);
+
+    function LongPollPlayerList() {
+        var checkSum = pollchecksum;
+        if (PLAYERSLIST.length > 0 && TimerReady.current == true) {
+            var timer = setInterval(() => {
+                UpdatePlayerListStats();
+            }, 1000);
+            TimerReady.current = false;
+        }
+
+        if (PollReady.current == true) {
+            PollReady.current = false;
+            fetch(`${APIADDR}/api/LP-get-player-list/${checkSum}`, {
+                credentials: "include",
+            }).then((response) => {
+                response.json().then((responseJSON) => {
+                    // Cancel timers
+                    clearInterval(timer);
+                    TimerReady.current = true;
+
+                    if (responseJSON[1].length == 0) {
+                        SETPLAYERSLIST([]);
+                    } else {
+                        SETPLAYERSLIST(responseJSON[1]);
+                    }
+                    setchecksum(responseJSON[0]);
+                    PollReady.current = true;
+                });
             });
-        });
+        }
     }
 
     // Start long polling
     useEffect(() => {
+        if (PLAYERSLIST.length == 0) {
+            return;
+        }
+
+        if (init.current == true) {
+            return;
+        }
+
         LongPollPlayerList(0);
-    }, []);
+
+        init.current = true;
+    });
 
     return (
         <div className="player-list" style={{ gridArea: `${props.gridArea}` }}>
@@ -137,16 +193,21 @@ function OnlinePlayerList(props) {
     const [ONLINEPLAYERSLIST, SETONLINEPLAYERSLIST] = useState([]);
 
     function LongPollOnlinePlayerList(checkSum) {
+        // Fetch the players list (filtering for only players online)
         fetch(`${APIADDR}/api/LP-get-online-player-list/null/${checkSum}`, {
             credentials: "include",
         }).then((response) => {
             response.json().then((responseJSON) => {
+                // If no one is online return null
                 if (responseJSON[1].length == 0) {
                     SETONLINEPLAYERSLIST([null]);
-                } else {
+                }
+                // Return online players
+                else {
                     SETONLINEPLAYERSLIST(responseJSON[1]);
                 }
 
+                // Restart the poll request
                 LongPollOnlinePlayerList(responseJSON[0]);
             });
         });
