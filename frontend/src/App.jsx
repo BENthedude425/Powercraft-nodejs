@@ -9,11 +9,15 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import PIndex from "../pages/index";
 import Pcreate_user from "../pages/create-user";
 import Plogin from "../pages/login";
-import PDashboard from "../pages/dashboard";
+import { PDashboard } from "../pages/dashboard";
 import PCreateServer from "../pages/create-server.jsx";
 import PServerDashboard from "../pages/server-dashboard.jsx";
 import PServerProperties from "../pages/server-properties.jsx";
 import PageNotFound from "../pages/page-not-found.jsx";
+import PPlayers from "../pages/players.jsx";
+import PPrograms from "../pages/programs.jsx";
+import PUsersandpermissions from "../pages/users-and-permissions.jsx";
+import PServers from "../pages/servers.jsx";
 
 import PTest from "../pages/testpage";
 
@@ -40,6 +44,14 @@ export default function App() {
                         path="server-properties*"
                         element={<PServerProperties />}
                     />
+
+                    <Route path="players" element={<PPlayers />} />
+                    <Route path="programs" element={<PPrograms />} />
+                    <Route
+                        path="users-and-permissions"
+                        element={<PUsersandpermissions />}
+                    />
+                    <Route path="servers" element={<PServers />}/>
                 </Route>
             </Routes>
         </BrowserRouter>

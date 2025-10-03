@@ -3,17 +3,16 @@ import { Graph, IntegratedGraph } from "../src/components/CGraphs";
 
 import Cookies from "universal-cookie";
 
-
 const Serverlist = lazy(() => import("../src/components/CServerList"));
 const DashBoardSideBar = lazy(() => import("../src/components/CDashSideBar"));
-import {OnlinePlayerList} from "../src/components/CPlayerList"
+import { OnlinePlayerList } from "../src/components/CPlayerList";
 import { GetAPIAddr } from "../src/assets/APIactions";
 
 import "../src/assets/dashboard.css";
 
 const cookies = new Cookies();
 
-export default function PDashboard() {
+function PDashboard() {
     const [GraphWidth, SetGraphWidth] = useState(300);
     const [IntegratedGraphWidth, SetIntegratedGraphWidth] = useState(300);
 
@@ -47,17 +46,14 @@ export default function PDashboard() {
 
     const APIADDR = GetAPIAddr();
 
-
     // Using initilised value prevents more than 1 request being sent at a time
     useEffect(() => {
         if (!initilised.current) {
             initilised.current = true;
             CalculateGraphWidth(20);
             CalculateGraphHeight(100);
-        GetResources();
-
+            GetResources();
         }
-        
     }, []);
 
     window.addEventListener("resize", () => {
@@ -137,9 +133,7 @@ export default function PDashboard() {
             <div className="main">
                 <DashBoardSideBar />
                 <div className="dashboard-container">
-                    <div className="dashboard-header">
-                        <b>Logged in as: {cookies.get("username")}</b>
-                    </div>
+                    <DashboardHeader />
                     <div className="dashboard-resource-container">
                         <div className="dashboard-heading">RESOURCES</div>
 
@@ -176,7 +170,9 @@ export default function PDashboard() {
                                 <Serverlist />
                             </div>
                             <div className="dashboard-list-container-content-div">
-                                <h1 className="dashboard-heading">Online Players</h1>
+                                <h1 className="dashboard-heading">
+                                    Online Players
+                                </h1>
                                 <OnlinePlayerList />
                             </div>
                         </div>
@@ -186,3 +182,13 @@ export default function PDashboard() {
         </div>
     );
 }
+
+function DashboardHeader() {
+    return (
+        <div className="dashboard-header">
+            <b>Logged in as: {cookies.get("username")}</b>
+        </div>
+    );
+}
+
+export { PDashboard, DashboardHeader };
