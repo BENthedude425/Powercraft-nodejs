@@ -64,45 +64,47 @@ function PDashboard() {
     // Could use some optimisations:
     //      * Send full data set on initial request and long poll for a single data object for every second
     function GetResources(checksum) {
-        fetch(`${APIADDR}/api/LP-get-resources/${checksum}`, { credentials: "include" }).then(
-            (response) => {
-                response.json().then((responseJSON) => {
-                    const newChecksum = responseJSON[0];
-                    const responseData = responseJSON[1];
+        fetch(`${APIADDR}/api/LP-get-resources/${checksum}`, {
+            credentials: "include",
+        }).then((response) => {
+            response.json().then((responseJSON) => {
+                const newChecksum = responseJSON[0];
+                const responseData = responseJSON[1];
 
-                    for (var data of responseData) {
-                        SetMemoryGraphData([
-                            ...AddGraphData(MemoryGraphData, {
-                                time: data.time,
-                                value: data.memory.currentmem,
-                            }),
-                        ]);
+                var memdata = [];
+                var cpudata = [];
 
-                        SetCPUGraphData([
-                            ...AddGraphData(CPUGraphData, {
-                                time: data.time,
-                                value: data.cpu,
-                            }),
-                        ]);
-                    }
+                for (var data of responseData) {
+                    memdata.push({
+                        time: data.time,
+                        value: data.memory.currentmem,
+                    });
 
-                    SetPlayerGraphData(data.players);
+                    cpudata.push({ time: data.time, value: data.cpu });
+                }
 
-                    GetResources(newChecksum);
-                });
-            }
-        );
+
+                // Set use states for graphs
+                SetMemoryGraphData(memdata);
+                SetCPUGraphData(cpudata);
+                SetPlayerGraphData(data.players);
+
+                GetResources(newChecksum);
+            });
+        });
     }
 
-    function AddGraphData(graphData, newData, limit = 10) {
+
+    // Obselete
+    function AddGraphData(graphData, newData, limit = 20) {
         graphData.push({
             value: newData.value,
             time: newData.time,
         });
 
-        if (graphData.length > limit) {
-            graphData.shift();
-        }
+        //if (graphData.length > limit) {
+        //    graphData.shift();
+        //}
 
         return graphData;
     }
