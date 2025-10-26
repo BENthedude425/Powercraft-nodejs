@@ -20,7 +20,6 @@ const { Setup, CreateRootUser } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
 const md5 = require("md5");
-const { Protocol } = require("puppeteer");
 const { console } = require("inspector");
 
 var DATABASECONNECTION = null;
@@ -286,18 +285,29 @@ INIT();
 async function SetAllPlayersStopped() {
     return await new Promise((resolve, reject) => {
         DATABASECONNECTION.query(
-            "UPDATE players SET status = 'offline' WHERE status = 'playing'",
-            (error, results, _) => {
+            "SELECT UUID, player_name from players WHERE status = 'playing'",
+            (error, results) => {
                 if (error != null) {
                     modules.Log(FILEIDENT, error);
                 }
-                modules.Log("test", results);
 
-                for (var key in results) {
-                    const playerData = results[key];
-                    modules.Log(
-                        FILEIDENT,
-                        `Player: ${playerData.username} was still playing when server crashed. Some statistics may be innacurate or incorrect.`
+                for (playerData of results) {
+                    const SQLquery =
+                        "UPDATE players SET status = 'offline' WHERE UUID  = ?";
+
+                    DATABASECONNECTION.query(
+                        SQLquery,
+                        [playerData.UUID],
+                        (error) => {
+                            if (error != null) {
+                                modules.Log(FILEIDENT, error);
+                            }
+
+                            modules.Log(
+                                FILEIDENT,
+                                `Player: ${playerData.player_name} was still playing when server crashed. Some statistics may be innacurate or incorrect.`
+                            );
+                        }
                     );
                 }
 
