@@ -39,6 +39,9 @@ var PLAYERCOUNTS = [];
 var PLAYERLISTS = {};
 var PLAYERDATA = [];
 
+var SERVERRESOURCES = [];
+const SERVERRESOURCESMAXLEN = 20;
+
 function GetExecutablePath(server) {
     switch (server.server_launcher_type) {
         case "Forge":
@@ -258,12 +261,18 @@ async function INIT() {
 
     DATABASECONNECTION = await InitialiseDB();
 
+    // Handle database records that couldn't be properly set after a crash or abrupt reset
     await SetAllServersStopped();
     await SetAllPlayersStopped();
 
+    // Set data collection services
     setInterval(() => {
         GetAllPlayers();
     }, 5000);
+
+    setInterval(() => {
+        GetResources();
+    }, 1000);
 
     let failed = await FetchServerVersions();
 
@@ -770,6 +779,45 @@ function GetPlayers(serverID) {
     const serverProcess = SERVERPROCESSES[serverID];
     serverProcess.stdin.write("list\n");
     return PLAYERCOUNTS[serverID];
+}
+
+async function GetResources() {
+    // Format into GB
+    const currentMemory = Round(ToGiga(os.totalmem() - os.freemem()), 2);
+    const totalMemory = Round(ToGiga(os.totalmem()), 2);
+    const Memory = { currentmem: currentMemory, totalmem: totalMemory };
+
+    var Cpu = await new Promise((resolve, reject) => {
+        osUtils.cpuUsage((x) => {
+            resolve(x * 100);
+        });
+    });
+    Cpu = Round(Cpu, 2);
+
+    var Disk = await diskCheck.check("/");
+    Disk.total = Round(ToGiga(Disk.total), 2);
+    Disk.free = Round(ToGiga(Disk.free), 2);
+    Disk.available = Round(ToGiga(Disk.available), 2);
+    Disk.used = Disk.total - Disk.free;
+
+    // Format all collected resources into object and push to the global array
+    Resources = {
+        time: Date.now(),
+        cpu: Cpu,
+        memory: Memory,
+        disk: Disk,
+        players: PLAYERDATA,
+    };
+
+    SERVERRESOURCES.push(Resources);
+
+    // Clamp data length
+
+    if (SERVERRESOURCES.length > SERVERRESOURCESMAXLEN) {
+        SERVERRESOURCES.shift();
+    }
+
+    return;
 }
 
 // Returns the total player count
@@ -1398,6 +1446,7 @@ app.get("/api/LP-get-server-data*", async (req, res) => {
     }, 250);
 });
 
+// Long poll
 app.get("/api/LP-get-player-list*", async (req, res) => {
     // PATH = /api/LP-get-player-list/CHECKSUM
     console.log("sdomething is wrong");
@@ -1425,6 +1474,23 @@ app.get("/api/LP-get-player-list*", async (req, res) => {
 
         if (checkSum != newCheckSum || res.closed) {
             res.json([newCheckSum, results]);
+            clearInterval(timer);
+        }
+    }, 250);
+});
+
+// Long poll
+app.get("/api/LP-get-resources*", async (req, res) => {
+    // PATH = /api/LP-get-resources/CHECKSUM
+
+    let splitPath = req.path.split("/");
+    const checkSum = splitPath[splitPath.length - 1];
+
+    var timer = setInterval(async () => {
+        const newCheckSum = md5(JSON.stringify(SERVERRESOURCES));
+
+        if (checkSum != newCheckSum || res.closed) {
+            res.json([newCheckSum, SERVERRESOURCES]);
             clearInterval(timer);
         }
     }, 250);
@@ -1525,35 +1591,6 @@ function Round(number, decimals) {
 function ToGiga(number) {
     return number / 1073741824;
 }
-
-app.get("/api/get-resources", async (req, res) => {
-    // Format into GB
-    const currentMemory = Round(ToGiga(os.totalmem() - os.freemem()), 2);
-    const totalMemory = Round(ToGiga(os.totalmem()), 2);
-    const Memory = { currentmem: currentMemory, totalmem: totalMemory };
-
-    var Cpu = await new Promise((resolve, reject) => {
-        osUtils.cpuUsage((x) => {
-            resolve(x * 100);
-        });
-    });
-    Cpu = Round(Cpu, 2);
-
-    var Disk = await diskCheck.check("/");
-    Disk.total = Round(ToGiga(Disk.total), 2);
-    Disk.free = Round(ToGiga(Disk.free), 2);
-    Disk.available = Round(ToGiga(Disk.available), 2);
-    Disk.used = Disk.total - Disk.free;
-
-    Resources = {
-        cpu: Cpu,
-        memory: Memory,
-        disk: Disk,
-        players: PLAYERDATA,
-    };
-
-    res.json(Resources);
-});
 
 app.get("/api/set-server-control*", async (req, res) => {
     const serverID = GetServerIDFromURL(req);

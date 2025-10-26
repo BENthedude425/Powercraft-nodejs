@@ -52,7 +52,7 @@ function PDashboard() {
             initilised.current = true;
             CalculateGraphWidth(20);
             CalculateGraphHeight(100);
-            GetResources();
+            GetResources(0);
         }
     }, []);
 
@@ -61,27 +61,34 @@ function PDashboard() {
         CalculateGraphHeight(100);
     });
 
-    function GetResources() {
-        fetch(`${APIADDR}/api/get-resources`, { credentials: "include" }).then(
+    // Could use some optimisations:
+    //      * Send full data set on initial request and long poll for a single data object for every second
+    function GetResources(checksum) {
+        fetch(`${APIADDR}/api/LP-get-resources/${checksum}`, { credentials: "include" }).then(
             (response) => {
                 response.json().then((responseJSON) => {
-                    SetMemoryGraphData([
-                        ...AddGraphData(MemoryGraphData, {
-                            time: Date.now(),
-                            value: responseJSON.memory.currentmem,
-                        }),
-                    ]);
+                    const newChecksum = responseJSON[0];
+                    const responseData = responseJSON[1];
 
-                    SetCPUGraphData([
-                        ...AddGraphData(CPUGraphData, {
-                            time: Date.now(),
-                            value: responseJSON.cpu,
-                        }),
-                    ]);
+                    for (var data of responseData) {
+                        SetMemoryGraphData([
+                            ...AddGraphData(MemoryGraphData, {
+                                time: data.time,
+                                value: data.memory.currentmem,
+                            }),
+                        ]);
 
-                    SetPlayerGraphData(responseJSON.players);
+                        SetCPUGraphData([
+                            ...AddGraphData(CPUGraphData, {
+                                time: data.time,
+                                value: data.cpu,
+                            }),
+                        ]);
+                    }
 
-                    GetResources();
+                    SetPlayerGraphData(data.players);
+
+                    GetResources(newChecksum);
                 });
             }
         );
