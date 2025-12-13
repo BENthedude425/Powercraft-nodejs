@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "test.js",
   "scripts": {
-    "build": "esbuild server.js --bundle --platform=node --outfile=server-out.js",
+    "build":"ncc build server.js -o ./builds/server-out",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js --build",
     "dev": "nodemon server.js"
