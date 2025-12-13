@@ -26,6 +26,7 @@ var DATABASECONNECTION = null;
 var DATABASECONFIGS;
 var FILEPATHS;
 
+const VERSION = "1.0.0";
 const DEVMODE = true;
 const PORT = 8080;
 const FILEIDENT = "server.js";
@@ -256,6 +257,7 @@ async function FetchServerVersions() {
 }
 
 async function INIT() {
+    modules.Log(FILEIDENT, `Version #${VERSION}`)
     modules.Log(FILEIDENT, "INIT", true);
     await Setup();
 

@@ -96,8 +96,8 @@ function GetServerProperties() {
 }
 
 function Log(fileIDENT, message, center = false) {
-    whiteSpaceNumber = "25";
-    whiteSpace = "";
+    const whiteSpaceNumber = "25";
+    var whiteSpace = "";
 
     prefix = `[${String(fileIDENT).toUpperCase()}]`;
 
@@ -114,7 +114,18 @@ function Log(fileIDENT, message, center = false) {
         message = CenterText(message);
     }
 
-    console.log(`${prefix}${whiteSpace}`, message);
+    const date = new Date();
+    
+    
+
+    // Format times to be 2 digits long 
+    let hours = date.getHours().toString().length == 1   ? `0${date.getHours()}`:  date.getHours();
+    let minutes = date.getMinutes().toString().length == 1 ? `0${date.getMinutes()}`:  date.getMinutes();
+    let seconds = date.getSeconds().toString().length == 1 ? `0${date.getSeconds()}`:  date.getSeconds();
+    
+    const timeStamp = `[${hours}:${minutes}:${seconds}]`
+
+    console.log(`${timeStamp}   ${prefix}${whiteSpace}`, message);
 }
 
 function CenterText(text) {
