@@ -258,6 +258,7 @@ async function FetchServerVersions() {
 
 async function INIT() {
     modules.Log(FILEIDENT, `Version #${VERSION}`)
+    modules.Log(FILEIDENT, `${GetDateTime()}`, true)
     modules.Log(FILEIDENT, "INIT", true);
     await Setup();
 
