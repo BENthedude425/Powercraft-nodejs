@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { GetAPIAddr } from "../assets/APIactions";
 import "../assets/player-list.css";
-import { useFetcher } from "react-router-dom";
-import { Update } from "@mui/icons-material";
 
 const APIADDR = GetAPIAddr();
 
@@ -119,20 +117,29 @@ function PlayerList(props) {
             UpdatedPlayerslist.push(playerData);
         }
         SETPLAYERSLIST(UpdatedPlayerslist);
-
-        //setTimeout(() => {
-        //    UpdatePlayerListStats();
-        //}, 1000);
     }
 
-    // Update seconds
+    // Update time played
     useEffect(() => {
         LongPollPlayerList();
     }, [PLAYERSLIST]);
 
     function LongPollPlayerList() {
         var checkSum = pollchecksum;
+
         if (PLAYERSLIST.length > 0 && TimerReady.current == true) {
+            // Adjust for the time played in current session
+            for (let key in PLAYERSLIST) {
+                let playerData = PLAYERSLIST[key];
+                if (playerData.status == "playing") {
+                    let lastPlayedTime = new Date(playerData.last_played);
+                    let timeDifference = Date.now() - lastPlayedTime.getTime();
+                    playerData.time_played =
+                        parseFloat(playerData.time_played) +
+                        timeDifference / 1000;
+                }
+            }
+
             var timer = setInterval(() => {
                 UpdatePlayerListStats();
             }, 1000);
@@ -191,32 +198,96 @@ function PlayerList(props) {
 
 function OnlinePlayerList(props) {
     const [ONLINEPLAYERSLIST, SETONLINEPLAYERSLIST] = useState([]);
+    const [pollchecksum, setchecksum] = useState(0);
+    const PollReady = useRef(true);
+    const TimerReady = useRef(true);
 
-    function LongPollOnlinePlayerList(checkSum) {
-        // Fetch the players list (filtering for only players online)
-        fetch(`${APIADDR}/api/LP-get-online-player-list/null/${checkSum}`, {
-            credentials: "include",
-        }).then((response) => {
-            response.json().then((responseJSON) => {
-                // If no one is online return null
-                if (responseJSON[1].length == 0) {
-                    SETONLINEPLAYERSLIST([null]);
-                }
-                // Return online players
-                else {
-                    SETONLINEPLAYERSLIST(responseJSON[1]);
+    function UpdateOnlinePlayerListStats() {
+        var UpdatedPlayerslist = {};
+        let keys = Object.keys(ONLINEPLAYERSLIST);
+        for (let key of keys) {
+            let selectedServer = ONLINEPLAYERSLIST[key];
+            UpdatedPlayerslist[key] = [];
+            for (var playerDataKey in selectedServer) {
+                var playerData = selectedServer[playerDataKey];
+
+                if (playerData.status == "playing") {
+                    playerData.time_played =
+                        parseFloat(playerData.time_played) + 1;
                 }
 
-                // Restart the poll request
-                LongPollOnlinePlayerList(responseJSON[0]);
+                UpdatedPlayerslist[key].push(playerData);
+            }
+        }
+
+        SETONLINEPLAYERSLIST(UpdatedPlayerslist);
+    }
+
+    // Update time played
+    useEffect(() => {
+        LongPollOnlinePlayerList();
+    }, [ONLINEPLAYERSLIST]);
+
+    function LongPollOnlinePlayerList() {
+        let checkSum = pollchecksum;
+        if (
+            Object.keys(ONLINEPLAYERSLIST).length > 0 &&
+            TimerReady.current == true
+        ) {
+            // Adjust for the time played in current session
+            let keys = Object.keys(ONLINEPLAYERSLIST);
+            keys.map((key) => {
+                let selectedServer = ONLINEPLAYERSLIST[key];
+                selectedServer.map((playerData) => {
+                    if (playerData.status == "playing") {
+                        let lastPlayedTime = new Date(playerData.last_played);
+                        let timeDifference =
+                            Date.now() - lastPlayedTime.getTime();
+                        playerData.time_played =
+                            parseFloat(playerData.time_played) +
+                            timeDifference / 1000;
+                    }
+                });
             });
-        });
+
+            console.log("setting timer");
+            var timer = setInterval(() => {
+                UpdateOnlinePlayerListStats();
+            }, 1000);
+            TimerReady.current = false;
+        }
+        // Fetch the players list (filtering for only players online)
+        if (PollReady.current == true) {
+            PollReady.current = false;
+            fetch(`${APIADDR}/api/LP-get-online-player-list/null/${checkSum}`, {
+                credentials: "include",
+            }).then((response) => {
+                response.json().then((responseJSON) => {
+                    // Cancel timers
+                    clearInterval(timer);
+                    TimerReady.current = true;
+
+                    // If no one is online return null
+                    if (responseJSON[1].length == 0) {
+                        SETONLINEPLAYERSLIST([null]);
+                    }
+                    // Return online players
+                    else {
+                        SETONLINEPLAYERSLIST(responseJSON[1]);
+                    }
+
+                    // Restart the poll request
+                    setchecksum(responseJSON[0]);
+                    PollReady.current = true;
+                });
+            });
+        }
     }
 
     // Start long polling
     useEffect(() => {
         if (!initialised) {
-            LongPollOnlinePlayerList("online-player-list");
+            LongPollOnlinePlayerList(0);
             initialised = true;
         }
     }, []);

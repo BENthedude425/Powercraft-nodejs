@@ -26,7 +26,7 @@ var DATABASECONNECTION = null;
 var DATABASECONFIGS;
 var FILEPATHS;
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const DEVMODE = true;
 const PORT = 8080;
 const FILEIDENT = "server.js";
@@ -1729,17 +1729,16 @@ if (DEVMODE) {
     });
 }
 
-app.get("/createnewrootuser", async (req, res) => {
-    modules.Log(FILEIDENT, "DELETE THIS FUNCTION");
-    CreateRootUser(DATABASECONNECTION, (error, results, fields) => {
-        if (error) {
-            res.send("Failed to create user");
-            return;
-        }
-
-        res.send("Created user");
-    });
-});
+//app.get("/createnewuser", async (req, res) => {
+//    CreateRootUser(DATABASECONNECTION, (error, results, fields) => {
+//        if (error) {
+//            res.send("Failed to create user");
+//            return;
+//        }
+//
+//        res.send("Created user");
+//    });
+//});
 
 app.get("/images/*", async (req, res) => {
     const splitPath = req.path.split("/images");

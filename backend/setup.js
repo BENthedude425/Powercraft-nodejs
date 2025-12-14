@@ -199,7 +199,7 @@ async function CreateDataBase(databaseName) {
     }
 
     if ((await CheckUserExists("root")) == false) {
-        await CreateRootUser(DATABASECONNECTION);
+        await CreateRootUser();
     }
 
     modules.Log(
@@ -208,12 +208,20 @@ async function CreateDataBase(databaseName) {
     );
 }
 
-async function CreateRootUser(dbConnection) {
+//async function CreateUser(username, root = false){
+//    let credentials = await GetUserCredentialsFromUser();
+//
+//    if(ValidateUserCreds(credentials)){
+//        CreateNewUser(username=username, password=password, root=false);
+//    }
+//}
+
+async function CreateRootUser() {
     credentials = await GetRootUserCredentialsFromUser();
 
     // Recur if the credentials provided are unsuitable
     if (ValidateUserCreds(credentials)) {
-        CreateRootUser(dbConnection);
+        CreateRootUser();
         return;
     }
 
@@ -225,7 +233,7 @@ async function CreateRootUser(dbConnection) {
 
         modules.Log(FILEIDENT, "Attempting to overwrite the user");
         await new Promise((resolve, reject) => {
-            dbConnection.query(
+            DATABASECONNECTION.query(
                 `DELETE FROM users WHERE username = '${credentials.username}'`,
                 (error, results, fields) => {
                     if (error) {
@@ -274,6 +282,27 @@ async function CheckTableExists(selectedKey) {
 }
 
 //---Get user input -- \\
+
+function GetUserCredentialsFromUser(){
+    return (answers = inquirer.prompt([
+        {
+            type: "input",
+            name: "username",
+            default: "powercraft_user",
+            message: "Enter the username of the powercraft user",
+        },
+        {
+            type: "password",
+            name: "password",
+            message: "Enter the password of the powercraft user",
+        },
+        {
+            type: "password",
+            name: "password2",
+            message: "Re-enter the password of the powercraft user",
+        },
+    ]));
+}
 
 function GetRootUserCredentialsFromUser() {
     return (answers = inquirer.prompt([

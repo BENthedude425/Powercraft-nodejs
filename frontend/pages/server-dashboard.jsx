@@ -1,4 +1,4 @@
-import { lazy, React, useEffect, useState } from "react";
+import {useEffect, useState } from "react";
 import "../src/assets/server-dashboard.css";
 
 import Header from "../src/components/CHeader";
