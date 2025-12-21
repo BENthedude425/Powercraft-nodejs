@@ -188,7 +188,7 @@ async function CreateDataBase(databaseName) {
 
     modules.Log(FILEIDENT, "Checking all tables are existing");
     // Connect to the sql server under the database
-    DATABASECONNECTION = mysql2.createConnection(DATABASECONFIGS);
+    DATABASECONNECTION = mysql2.createPool(DATABASECONFIGS);
 
     const TableKeys = Object.keys(TABLES);
     for (let i = 0; i < TableKeys.length; i++) {

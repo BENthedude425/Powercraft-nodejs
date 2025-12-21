@@ -2,5 +2,9 @@
     "host": "localhost",
     "user": "powercraft_server",
     "password": "powercraft123",
-    "database": "powercraft"
+    "database": "powercraft",
+    "waitForConnections": true,
+    "connectionLimit": 10,
+    "queueLimit": 0,
+    "connectTimeout": 10000
 }

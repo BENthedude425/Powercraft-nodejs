@@ -16,7 +16,7 @@ const modules = require("./modules");
 const crypto = require("crypto");
 const fs = require("fs");
 
-const { Setup, CreateRootUser } = require("./setup");
+const { Setup } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { exec } = require("child_process");
 const md5 = require("md5");
@@ -57,7 +57,7 @@ function GetExecutablePath(server) {
 async function InitialiseDB() {
     await LoadConfigs();
 
-    return mysql2.createConnection(DATABASECONFIGS);
+    return mysql2.createPool(DATABASECONFIGS);
 }
 
 async function PlayerExists(UUID) {
@@ -257,8 +257,8 @@ async function FetchServerVersions() {
 }
 
 async function INIT() {
-    modules.Log(FILEIDENT, `Version #${VERSION}`)
-    modules.Log(FILEIDENT, `${GetDateTime()}`, true)
+    modules.Log(FILEIDENT, `Version #${VERSION}`);
+    modules.Log(FILEIDENT, `${GetDateTime()}`, true);
     modules.Log(FILEIDENT, "INIT", true);
     await Setup();
 
