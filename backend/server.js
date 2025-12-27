@@ -18,15 +18,16 @@ const fs = require("fs");
 
 const { Setup } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const md5 = require("md5");
 const { console } = require("inspector");
+const { error } = require("console");
 
 var DATABASECONNECTION = null;
 var DATABASECONFIGS;
 var FILEPATHS;
 
-const VERSION = "1.0.1";
+const VERSION = "1.0.2";
 const DEVMODE = true;
 const PORT = 8080;
 const FILEIDENT = "server.js";
@@ -667,17 +668,23 @@ async function InstallServer(serverID, command) {
 }
 
 // Make API functionality to change the executable file to something else for edge cases or not 100% supported launchers
-function ReturnRunCommand(server) {
+function ReturnRunCommandForSpawn(server) {
     const pathPosition = server.server_executable_path.lastIndexOf(".");
     const fileExtension = server.server_executable_path.slice(pathPosition);
-    const serverPath = GetServerPath(server.server_name);
+
+    var command = "java";
+    var args = [];
+    var fileName = server.server_executable_path;
 
     switch (fileExtension) {
         case ".jar":
-            return `cd ${serverPath} && java -jar ${server.server_executable_path}`;
-        default:
-            return `cd ${serverPath} && ${server.server_executable_path}`;
+            args.push("-jar");
+            
     }
+
+    args.push(server.server_executable_path);
+
+    return [command, args];
 }
 
 function ParseServerName(serverName) {
@@ -694,14 +701,23 @@ function RunServer(server) {
 
     ChangeServerStatus(server.ID, "Running");
 
-    const command = ReturnRunCommand(server);
-    var serverProcess = exec(command);
+    //const command = ReturnRunCommand(server);
+    var [command, args] = ReturnRunCommandForSpawn(server);
+    
+    var serverProcess = spawn(command, args, {
+        cwd: serverPath,
+
+        stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    //var serverProcess = exec(command, args);
     PLAYERCOUNTS[server.ID] = {
         value: 0,
         total: 0,
     };
 
     serverProcess.stdout.on("data", (data) => {
+        data = data.toString();
         // [13:25:26 INFO]: There are 1 of a max of 20 players online: BENthedude425, Player2, Player3
         if (data.includes("players online:")) {
             var formattedData = data.split(":");
@@ -758,10 +774,12 @@ function RunServer(server) {
 
     // Error handling
     serverProcess.stderr.on("data", (error) => {
-        fs.appendFileSync(`${serverPath}/terminal.txt`, error);
+        error = error.toString();
+        fs.appendFileSync(`ERROR:${serverPath}/terminal.txt`, error);
     });
 
     serverProcess.on("exit", (code) => {
+        code = code.toString();
         ChangeServerStatus(server.ID, "Stopped");
         fs.appendFileSync(
             `${serverPath}/terminal.txt`,
@@ -774,7 +792,12 @@ function RunServer(server) {
         delete PLAYERLISTS[server.ID];
     });
 
+    serverProcess.on("error", (errorMessage) => {
+        fs.appendFileSync(`${serverPath}/terminal.txt`, errorMessage);
+    });
+
     SERVERPROCESSES[server.ID] = serverProcess;
+
 }
 
 // Updates the server player count
