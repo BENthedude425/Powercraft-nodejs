@@ -27,7 +27,7 @@ var DATABASECONFIGS;
 var FILEPATHS;
 
 // Switched to build numbers for easier tracking
-const BUILDNUMBER = 5; 
+const BUILDNUMBER = 6; 
 const DEVMODE = true;
 const PORT = 8080;
 const FILEIDENT = "server.js";
