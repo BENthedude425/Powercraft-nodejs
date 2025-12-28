@@ -30,7 +30,7 @@ jobs:
           fi
           new=$((current+1))
           echo "Bumping BUILDNUMBER: $current -> $new"
-          sed -E -i "s/^([[:space:]]*const BUILDNUMBER\s*=\s*)(\"?[0-9]+\"?)(\s*;?)/const BUILDNUMBER = \"${new}\";/" "$FILE"
+          sed -E -i "s/^([[:space:]]*const BUILDNUMBER\s*=\s*)(\"?[0-9]+\"?)(\s*;?)/const BUILDNUMBER = ${new};/" "$FILE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$FILE"
