@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "../src/components/CHeader";
-import {GetAPIAddr} from "../src/assets/APIactions";
+import { GetAPIAddr } from "../src/assets/APIactions";
 import ServerProperties from "../src/components/CServerProperties";
 import "../src/assets/create-server.css";
 import "../src/assets/dashboard.css";
@@ -56,91 +56,12 @@ export default function PCreateServer() {
         setForgeReleases(serverVersionsData["Forge"][version]);
     }
 
-    return (
-        <div className="dashboard-page">
-            <div className="dashboard-right">
-                <Header />
-
-                <form
-                    action={`${APIADDR}/api/create-server`}
-                    method="POST"
-                    encType="multipart/form-data"
-                    className="create_server_form"
-                >
-                    <input
-                        type="text"
-                        name="serverName"
-                        placeholder="server name"
-                    />
-
-                    <img
-                        src={serverIMGSrc}
-                        style={{ width: "300px", height: "300px" }}
-                        alt="preview image"
-                    />
-                    <input
-                        type="file"
-                        name="server_img"
-                        onChange={onImageChange}
-                    />
-
-                    <select
-                        name="launcherTypeSelect"
-                        id="launcherTypeSelect"
-                        onChange={handleLauncherChange}
-                    >
-                        {Object.keys(serverVersionsData).map((launcherType) => {
-                            return (
-                                <option key={launcherType}>
-                                    {launcherType}
-                                </option>
-                            );
-                        })}
-                    </select>
-
-                    <select
-                        name="versionSelect"
-                        id="versionSelect"
-                        onChange={handleVersionChange}
-                    >
-                        {launcherVersions.map((version) => {
-                            return <option key={version}>{version}</option>;
-                        })}
-                    </select>
-
-                    <select
-                        name="forgeReleaseSelect"
-                        id="forgeReleaseSelect"
-                        style={{ visibility: "Hidden" }}
-                    >
-                        {forgeReleases.map((release) => {
-                            return <option>{release.file}</option>;
-                        })}
-                    </select>
-
-                    <div className="option-grid">
-                        <ServerProperties />
-                    </div>
-
-                    <input type="submit" />
-                </form>
-            </div>
-        </div>
-    );
-}
-
-function temp() {
-    return (
-        <div>
-            <Header />
-            <form
-                action={`${APIADDR}/api/create-server`}
-                method="POST"
-                encType="multipart/form-data"
-            >
+    function ServerDetails() {
+        return (
+            <div className="server-details-container">
                 <input
                     type="text"
-                    name="server_name"
+                    name="serverName"
                     placeholder="server name"
                 />
 
@@ -182,14 +103,25 @@ function temp() {
                         return <option>{release.file}</option>;
                     })}
                 </select>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <Header />
+
+            <form
+                action={`${APIADDR}/api/create-server`}
+                method="POST"
+                encType="multipart/form-data"
+                className="create_server_form"
+            >
+                <ServerDetails />
+                <ServerProperties />
 
                 <input type="submit" />
             </form>
-
-            <div style={{ marginTop: "100px" }}>
-                server name serverDirectory server verison server owner / groups
-                server properes ti eula agreement
-            </div>
         </div>
     );
 }

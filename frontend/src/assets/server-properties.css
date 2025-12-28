@@ -1,0 +1,70 @@
+/* Styles for the server properties component */
+.server-properties-container {
+    display: flex;
+    flex-direction: column;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    border-top: 2px solid var(--OpaicGrey);
+    border-bottom: 2px solid var(--OpaicGrey);
+    border-radius: 5px;
+}
+
+.category-title {
+    font-size: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 25%;
+    justify-content: space-evenly;
+    user-select: none;
+}
+
+.category-title span {
+    display: inline-block;
+    transform: rotate(0);
+    transition: all 0.3s ease;
+    user-select: none;
+    margin-left: 2%;
+}
+
+.server-property {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+}
+
+.server-property-description{
+    color: rgb(150, 150, 150);
+}
+
+.server-property-container {
+    transition: all 0.3s ease;
+    max-height: 0;
+    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    height: min-content;
+    overflow-y: hidden;
+}
+
+.server-properties-container div{
+    margin-left: 2.5%;
+}
+
+.server-property-item {
+    margin-left: auto;
+    width: 50%;
+    font-size: 1em;
+    padding: 5px;
+}
+
+select.server-property-item,
+input.server-property-item {
+    width: 30%;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    
+    border: 1.5px var(--OpaicGrey) solid;
+    border-radius: 5px;
+
+    float: right;
+}

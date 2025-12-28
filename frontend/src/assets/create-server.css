@@ -29,11 +29,11 @@
 }
 
 .create_server_form {
-    background-color: var(--OpaicGrey);
-
-    padding: 2%;
-
-    height: 100vh;
+    
+    max-width: 60%;
+    min-height: 100%;
+    margin-left: 30%;
+    margin-right: 30%;
 }
 
 .container_header2 {

@@ -21,13 +21,13 @@ const { readFileSync, writeFileSync } = require("fs");
 const { spawn } = require("child_process");
 const md5 = require("md5");
 const { console } = require("inspector");
-const { error } = require("console");
 
 var DATABASECONNECTION = null;
 var DATABASECONFIGS;
 var FILEPATHS;
 
-const VERSION = "1.0.2";
+// Switched to build numbers for easier tracking
+const BUILDNUMBER = 1; 
 const DEVMODE = true;
 const PORT = 8080;
 const FILEIDENT = "server.js";
@@ -258,7 +258,7 @@ async function FetchServerVersions() {
 }
 
 async function INIT() {
-    modules.Log(FILEIDENT, `Version #${VERSION}`);
+    modules.Log(FILEIDENT, `Build number:#${BUILDNUMBER}`);
     modules.Log(FILEIDENT, `${GetDateTime()}`, true);
     modules.Log(FILEIDENT, "INIT", true);
     await Setup();
@@ -679,7 +679,6 @@ function ReturnRunCommandForSpawn(server) {
     switch (fileExtension) {
         case ".jar":
             args.push("-jar");
-            
     }
 
     args.push(server.server_executable_path);
@@ -703,7 +702,7 @@ function RunServer(server) {
 
     //const command = ReturnRunCommand(server);
     var [command, args] = ReturnRunCommandForSpawn(server);
-    
+
     var serverProcess = spawn(command, args, {
         cwd: serverPath,
 
@@ -797,7 +796,6 @@ function RunServer(server) {
     });
 
     SERVERPROCESSES[server.ID] = serverProcess;
-
 }
 
 // Updates the server player count
@@ -1031,47 +1029,45 @@ async function UpdateUserLeft(username) {
     );
 }
 
+// Fills server properties options for the frontend based on the current selected values
+// this is needed because we need to convert the properties file into JSON iterable object
 function FillServerPropertiesOptions(serverProperties) {
-    const defaultServerProperties = modules.GetServerProperties();
+    const defaultServerProperties = modules.GetDefaultServerProperties();
     let newServerProperties = {};
 
-    const keys = Object.keys(serverProperties);
-    for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
+    // This will hold all of the categories for the server properties as they are the keys of the object
+    const serverPropertiesCategories = Object.keys(serverProperties);
 
-        // If the default values are not an array just return current value
-        if (typeof defaultServerProperties[key] != "object") {
-            newServerProperties[key] = serverProperties[key];
-            continue;
+    // Iterate through each category and fill the options
+    for (const category of serverPropertiesCategories) {
+        const categoryProperties = Object.keys(category);
+        newServerProperties[category] = {};
+
+        for (const property of categoryProperties) {
+            // If the default value is a string, just return the current value
+            if (typeof property == "string") {
+                newServerProperties[category][property] =
+                    serverProperties[category][property];
+                continue;
+            } else if (typeof property == "object") {
+                // If the property is an object then we need to fill the options with the current value as the first value
+                let currentValue = [serverProperties[category][property]];
+                // Remove selected value from default array and then combine both arrays, letting current value be first
+                let otherValues = defaultServerProperties[category][property];
+                let combinedValues = [currentValue, ...otherValues];
+
+                newServerProperties[category][property] = combinedValues;
+                continue;
+            } else if (typeof property == "boolean") {
+                let values = [
+                    serverProperties[category][property],
+                    !serverProperties[category][property],
+                ];
+                newServerProperties[category][property] = values;
+                continue;
+            }
         }
-
-        // Set first value to be the current selected value
-        const currentValue = [serverProperties[key]];
-        // Remove selected value from default array
-        let otherValues = defaultServerProperties[key];
-
-        let indexOfValue = -1;
-
-        // If the value is a boolean initialise it (JS converts the values to string)
-        if (currentValue[0] == "true" || currentValue[0] == "false") {
-            indexOfValue = otherValues.indexOf(JSON.parse(currentValue[0]));
-        } else {
-            indexOfValue = otherValues.indexOf(currentValue[0]);
-        }
-
-        // If value could not be indexed just join the arrays and set the new value as that
-        if (indexOfValue == -1) {
-            currentValue.push(...otherValues);
-            newServerProperties[key] = currentValue;
-            continue;
-        }
-
-        otherValues.splice(indexOfValue, 1);
-        // Join both arrays together and return
-        currentValue.push(...otherValues);
-        newServerProperties[key] = currentValue;
     }
-
     return newServerProperties;
 }
 
@@ -1346,13 +1342,13 @@ app.get("/api/get-server-properties*", async (req, res) => {
 
     // If no serverID is specified return a template
     if (serverID.length == 0) {
-        res.jsonp(modules.GetServerProperties());
+        res.jsonp(modules.GetDefaultServerProperties());
         return;
     }
 
     let serverProperties = await GetServerProperties(serverID);
     serverProperties = FillServerPropertiesOptions(serverProperties);
-
+    console.log(serverProperties)
     res.jsonp(serverProperties);
 });
 
