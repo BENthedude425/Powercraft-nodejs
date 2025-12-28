@@ -20,7 +20,6 @@ const { Setup } = require("./setup");
 const { readFileSync, writeFileSync } = require("fs");
 const { spawn } = require("child_process");
 const md5 = require("md5");
-const { console } = require("inspector");
 
 var DATABASECONNECTION = null;
 var DATABASECONFIGS;
